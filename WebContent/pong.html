@@ -1,0 +1,642 @@
+<!-- Copyright 2016 David Mattox  -->
+<!-- Usage of sections of code is granted to use in other projects under fair use-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  
+<title>Pong</title>
+</head>
+<body onload="onLoad()">
+
+<canvas id="pongCanvas" width=1024 height=768></canvas>
+
+
+<script>
+
+/*******************************************/
+function Rect(left, top, right, bottom){
+	this.setRect(left, top, right, bottom);
+}
+
+function intersection(r1, r2) {
+	return r1.left < r2.right  && r1.right  > r2.left &&
+		   r1.top  < r2.bottom && r1.bottom > r2.top; 
+}
+
+Rect.prototype.setRect = function(left, top, right, bottom) {
+	this.left = left;
+	this.top = top;
+	this.right = right;
+	this.bottom = bottom;
+
+	// lets store the original locations
+	this.originalLeft = left;
+	this.originalTop = top;
+	this.originalRight = right;
+	this.originalBottom = bottom;
+};
+
+Rect.prototype.reset = function() {
+	this.left = this.originalLeft;
+	this.top = this.originalTop;
+	this.right = this.originalRight;
+	this.bottom = this.originalBottom;
+};
+
+Rect.prototype.width = function() {
+	return this.right - this.left;
+};
+
+Rect.prototype.height = function() {
+	return this.bottom - this.top;
+};
+
+function scaleRect(originalRect)
+{
+	return new Rect(originalRect.left * game.xScale, originalRect.top * game.yScale, originalRect.right * game.xScale, originalRect.bottom * game.yScale);
+}
+
+function scaleX(x)
+{
+	return Math.floor(x * game.xScale);
+}
+
+function scaleY(y)
+{
+	return Math.floor(y * game.yScale);
+}
+
+function scaleText(additionalFactor) {
+    var baseFactor = 25;
+
+    if(additionalFactor != null)
+        baseFactor += additionalFactor; 
+     
+	var scale;
+
+	if(game.xScale < game.yScale)
+		scale = game.xScale;
+	else
+		scale = game.yScale;
+
+	return Math.floor(baseFactor  * scale) + "px Comic Sans MS";
+}
+
+/*******************************************/
+
+function GameObject(left, top, right, bottom) {
+	Rect.call(this, left, top, right, bottom);
+}
+
+GameObject.prototype = Object.create(Rect.prototype);
+GameObject.prototype.contructor = GameObject;
+
+GameObject.prototype.draw = function(ctx, color) {
+	ctx.beginPath();
+
+	// Default a color if nothing is passed in
+	if(color==null)
+		ctx.strokeStyle = 'white';
+	else
+		ctx.strokeStyle = color;
+	
+	ctx.lineWidth = "5";
+	ctx.rect(scaleX(this.left), scaleY(this.top), scaleX(this.width()), scaleY(this.height()));
+	ctx.stroke();	
+};
+
+/*******************************************/
+
+function GamePaddle(left, top, right, bottom) {
+	GameObject.call(this, left, top, right, bottom);
+}
+
+GamePaddle.prototype = Object.create(GameObject.prototype);
+GamePaddle.prototype.contructor = GamePaddle;
+
+/*******************************************/
+
+var game = Object.create(null);
+
+//Define the physical screen
+game.physicalRect = new Rect(0,0, window.innerWidth, window.innerHeight);
+
+//Define the rectangle for the score section
+game.scoreRect = new GameObject(0, 0, 1000, 75);
+
+//Score area overrides basic GameObject draw
+game.scoreRect.draw = function(ctx) {
+	ctx.font = scaleText();
+	ctx.fillStyle = "red";
+	ctx.textAlign = "left";
+	ctx.fillText("Score: " + game.leftScore,scaleX(50),scaleY(50));
+	ctx.textAlign = "right";
+	ctx.fillText("Score: " + game.rightScore, scaleX(game.scoreRect.width() - 50), scaleY(50));
+	ctx.textAlign = "center";
+};
+
+game.gameRect = new GameObject(0, 75, 1000, 700);
+
+// Game area overrides basic GameObject draw
+game.gameRect.draw = function(ctx) {
+	// Call base draw
+	GameObject.prototype.draw.call(this, ctx);
+
+	// Center line
+	ctx.beginPath();
+	ctx.moveTo(scaleX(this.right/2), scaleY(this.top));
+	ctx.lineTo(scaleX(this.right/2), scaleY(this.bottom));
+	ctx.stroke();	
+};
+
+game.xScale = game.physicalRect.right / game.gameRect.right;
+game.yScale = game.physicalRect.bottom / game.gameRect.bottom;
+
+game.leftPaddle = new GamePaddle(50, 325, 65, 375);
+game.rightPaddle = new GamePaddle(935, 325, 950, 375);
+
+game.pauseRect = new GameObject(320, 645, 440, 685);
+//Pause button area overrides basic GameObject draw
+game.pauseRect.draw = function(ctx) {
+	// Show pause button if we aren't in demo mode
+	if(!game.isDemo()) {
+		// Call base draw
+		GameObject.prototype.draw.call(this, ctx, "red");
+
+		ctx.font = scaleText();
+		ctx.fillStyle = "red";
+		ctx.textAlign = "center";
+		var currentText = ctx.textBaseline;
+		ctx.textBaseline = "top";
+		ctx.fillText("'P'ause", scaleX(this.left + this.width() /2), scaleY(this.top));
+		ctx.textBaseline = currentText;
+
+		// Display pause message
+		if(game.isPaused()) {
+			ctx.textAlign = "center";
+			ctx.fillText("Paused", scaleX(game.scoreRect.width() / 2), scaleY(game.scoreRect.bottom + game.gameRect.bottom / 2));
+		}
+	}
+};
+
+game.leftScore = 0;
+game.rightScore = 0;
+
+game.ball = new GameObject(150, 150, 155, 155);
+game.ball.xDirection = 3;
+game.ball.yDirection = 3;
+
+game.gameStateEnum = {
+	DEMO : "Demo",
+	PLAYING : "Playing",
+	PAUSED : "Paused"
+};
+
+game.gameState = game.gameStateEnum.DEMO;
+
+game.automoveEnum = {
+	LEFT_UP : "'W'",
+	LEFT_DOWN : "'S'",
+	RIGHT_UP : "'Up Key'",
+	RIGHT_DOWN : "'Down Key'",
+	NONE : "None"			 
+};
+
+game.automove = game.automoveEnum.NONE;
+
+game.checkScreenResize = function(canvas) {
+	// Check to see if the window size has changed
+	if(game.physicalRect.right != window.innerWidth || game.physicalRect.bottom != window.innerHeight){
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		this.physicalRect = new Rect(0,0, window.innerWidth, window.innerHeight);
+
+		this.xScale = this.physicalRect.right / this.gameRect.right;
+		this.yScale = this.physicalRect.bottom / this.gameRect.bottom;
+	}
+};
+
+game.togglePause = function() {
+	if (this.isPlaying())
+		this.gameState = this.gameStateEnum.PAUSED;
+	else if (this.isPaused())
+		this.gameState = this.gameStateEnum.PLAYING;
+};
+
+game.switchToPlayState = function() {
+	this.gameState = this.gameStateEnum.PLAYING;
+
+	this.automove = this.automoveEnum.NONE;
+
+	this.resetBall();
+
+	this.leftScore = 0;
+	this.rightScore = 0;
+
+	this.leftPaddle.reset();
+	this.rightPaddle.reset();
+};
+
+game.movePaddleXY = function(x, y) {
+	// Only move the paddles if we are playing
+	if(!this.isPlaying())
+		return;
+
+	// Is this right or left paddle?
+	if(x < scaleX(this.gameRect.width() / 2)) { //Left paddle
+		if(y < scaleY(this.leftPaddle.top)) 		 
+			game.movePaddleUp(this.leftPaddle);
+	
+		else if (y > scaleY(this.leftPaddle.bottom)) 		
+			game.movePaddleDown(this.leftPaddle);
+	}
+	else { // Right paddle 
+		if(y < scaleY(this.rightPaddle.top)) 			
+			game.movePaddleUp(this.rightPaddle);
+		
+		else if (y > scaleY(this.rightPaddle.bottom)) {		
+			game.movePaddleDown(this.rightPaddle);
+		}
+	} 	
+};
+
+game.isDemo = function() {
+	return this.gameState == this.gameStateEnum.DEMO;
+};
+
+game.isPlaying = function() {
+	return this.gameState == this.gameStateEnum.PLAYING;
+};
+
+game.isPaused = function() {
+	return this.gameState == this.gameStateEnum.PAUSED;
+};
+
+game.animate = function() {
+	if(game.isDemo()) {
+		game.automovePaddles();
+	}
+
+	if(!game.isPaused()) {
+		game.moveBall();
+		game.movePaddles();
+	}
+
+    screen.updateScreen();
+    
+    requestAnimationFrame(game.animate);
+};
+
+game.automovePaddles = function() {
+	this.automove = this.automoveEnum.NONE;
+
+	// Only move when coming toward us and closer
+	if((this.ball.left < this.gameRect.right * 2/3) && this.ball.xDirection < 0) {
+		if(this.ball.top < this.leftPaddle.top + 10) { 
+			this.automove = this.automoveEnum.LEFT_UP;
+			
+			this.movePaddleUp(this.leftPaddle);
+		}
+		else if (this.ball.bottom > this.leftPaddle.bottom - 10) { 
+			this.automove = this.automoveEnum.LEFT_DOWN;
+
+			this.movePaddleDown(this.leftPaddle);
+		}
+		
+	}
+    
+	// Only move when coming toward us and closer
+	if((this.ball.left > this.gameRect.right * 1/3) && this.ball.xDirection > 0) {
+		if(this.ball.top < this.rightPaddle.top + 10) {
+			this.automove = this.automoveEnum.RIGHT_UP;
+
+			this.movePaddleUp(this.rightPaddle);
+		}
+		else if (this.ball.bottom > this.rightPaddle.bottom - 10) { 
+			this.automove = this.automoveEnum.RIGHT_DOWN;
+			
+			this.movePaddleDown(this.rightPaddle);
+		}
+	} 
+};
+
+game.movePaddles = function() {
+	if(gameControls.keyPressed['S'.charCodeAt(0)])
+		game.movePaddleDown(this.leftPaddle);
+	if(gameControls.keyPressed['W'.charCodeAt(0)])
+		game.movePaddleUp(this.leftPaddle);
+	if(gameControls.keyPressed[40]) // down arrow
+		game.movePaddleDown(this.rightPaddle);
+	if(gameControls.keyPressed[38]) // Up arrow
+		game.movePaddleUp(this.rightPaddle);	
+};
+
+game.movePaddleUp = function(paddle) { 
+	// Check to make sure we aren't moving outside the Game area
+	if(paddle.top > this.gameRect.top) {
+		paddle.top -= 5;
+		paddle.bottom -= 5;
+	}
+	else { //Make sure we aren't above
+		paddle.bottom = paddle.height() + this.gameRect.top;
+		paddle.top = this.gameRect.top;
+	}
+};
+
+game.movePaddleDown = function(paddle) {
+	// Check to make sure we aren't moving outside the Game area
+	if(paddle.bottom < this.gameRect.bottom) {
+		paddle.top += 5;
+		paddle.bottom += 5;
+	}	
+};
+
+game.hitPaddle = function(paddle) {
+	this.ball.xDirection *= -1;
+
+	var hitlocation = this.ball.top - paddle.top;
+
+	var ratio = hitlocation / paddle.height();
+
+	this.ball.yDirection = 20 * ratio -10 ;
+};
+
+game.moveBall = function() {
+	// Did we hit a paddle?
+	if(intersection(this.leftPaddle, this.ball)) 
+		game.hitPaddle(game.leftPaddle);
+	else if(intersection(this.rightPaddle, this.ball)) 
+		game.hitPaddle(game.rightPaddle);
+
+	// Check to see if upper or lower boundary
+	if((this.ball.bottom + this.ball.yDirection > this.gameRect.bottom) || (this.ball.top + this.ball.yDirection < this.gameRect.top)) 
+		this.ball.yDirection *= -1;
+	
+	// Did left score?
+	if(this.ball.right + this.ball.xDirection > this.gameRect.right){
+		if(this.isPlaying()){
+			this.leftScore++;	
+
+			if(this.leftScore >= 5)
+				this.gameState = this.gameStateEnum.DEMO;	
+		}
+		this.resetBall();
+	}
+	
+	// Did right score?
+	if(this.ball.left + this.ball.xDirection < this.gameRect.left) {
+		if(this.isPlaying()){
+			this.rightScore++;
+			
+			if(this.rightScore >= 5)
+				this.gameState = this.gameStateEnum.DEMO;
+		}
+		this.resetBall();
+	}
+
+	// Move the ball
+	this.ball.left += this.ball.xDirection;
+	this.ball.right += this.ball.xDirection;
+		
+	this.ball.top += this.ball.yDirection;
+	this.ball.bottom += this.ball.yDirection;
+};
+
+game.resetBall = function() {
+	this.ball.left = this.gameRect.width() / 2;
+	this.ball.right = this.ball.left + 5;
+	this.ball.top = this.gameRect.height() / 2;
+	this.ball.bottom = this.ball.top + 5;
+
+	this.ball.yDirection = 3;
+};
+
+/*******************************************/
+
+var gameControls = Object.create(null);
+gameControls.keyPressed = {};
+
+gameControls.mouse = new Rect(0,0,0,0);
+gameControls.mouse.mouseClick = false;
+
+gameControls.debug = false;
+
+/*******************************************/
+
+var screen = Object.create(null);
+
+screen.updateScreen = function() {
+
+	var canvas = document.getElementById("pongCanvas");
+
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	var ctx = canvas.getContext("2d");
+	
+	game.checkScreenResize(canvas); 
+
+	// Black background
+	ctx.fillStyle = "#000000";
+	ctx.fillRect(0, 0, canvas.width, canvas.height); 
+
+	ctx.fillStyle = "red";
+	ctx.font = scaleText();
+		
+	// Check to see if the screen is too small to even play
+	if(canvas.width < 320 || canvas.height < 320) {
+		if(game.isPlaying())
+			game.togglePause();
+
+		ctx.textAlign = "Left";
+		ctx.textBaseline = "top";
+		ctx.fillText("Window is too small to play",0,0);
+		return;
+	}
+	
+	// Draw Game area
+	game.gameRect.draw(ctx);
+
+	// Draw ball
+	game.ball.draw(ctx);
+
+	// Draw paddles
+	game.leftPaddle.draw(ctx);
+	game.rightPaddle.draw(ctx);
+
+	game.pauseRect.draw(ctx);
+
+	// Draw Score
+	game.scoreRect.draw(ctx);
+
+	// Display start message
+	if(game.isDemo()) {
+
+		ctx.fillStyle = "red";
+		ctx.textAlign = "center";
+
+		if(game.leftScore > game.rightScore)
+			ctx.fillText("Left Player Won!", scaleX(game.scoreRect.width() / 2), scaleY(game.scoreRect.bottom + game.gameRect.bottom / 2 - 100));
+
+		if(game.leftScore < game.rightScore)
+			ctx.fillText("Right Player Won!", scaleX(game.scoreRect.width() / 2), scaleY(game.scoreRect.bottom + game.gameRect.bottom / 2 - 100));
+
+		ctx.textAlign = "center";
+		ctx.fillText("Press any key to begin", scaleX(game.scoreRect.width() / 2), scaleY(game.scoreRect.bottom + game.gameRect.bottom / 2));
+		
+		// Display text about automoves
+		if(game.automove == game.automoveEnum.LEFT_UP) {
+			ctx.textAlign = "left";
+			ctx.fillText(game.automoveEnum.LEFT_UP, scaleX(game.leftPaddle.right), scaleY(game.leftPaddle.top));
+		}
+
+		if(game.automove == game.automoveEnum.RIGHT_UP){
+			ctx.textAlign = "right";
+			ctx.fillText(game.automoveEnum.RIGHT_UP, scaleX(game.rightPaddle.left), scaleY(game.rightPaddle.top));
+		}
+		
+		ctx.textBaseline = "top";
+		
+		if(game.automove == game.automoveEnum.LEFT_DOWN) {
+			ctx.textAlign = "left";
+			ctx.fillText(game.automoveEnum.LEFT_DOWN, scaleX(game.leftPaddle.right), scaleY(game.leftPaddle.bottom));
+		}
+
+		if(game.automove == game.automoveEnum.RIGHT_DOWN) {
+			ctx.textAlign = "right";
+			
+			ctx.fillText(game.automoveEnum.RIGHT_DOWN, scaleX(game.rightPaddle.left), scaleY(game.rightPaddle.bottom));
+			
+		}
+	}
+
+	// Debug information
+	if(gameControls.debug){
+		ctx.textAlign = "left";
+		ctx.fillText("Left Paddle: " + game.leftPaddle.left + " " + game.leftPaddle.top + " " + game.leftPaddle.right + " " + game.leftPaddle.bottom , 50 ,100);
+		ctx.fillText("Right Paddle: " + game.rightPaddle.left + " " + game.rightPaddle.top + " " + game.rightPaddle.right + " " + game.rightPaddle.bottom , 50 ,150);
+		ctx.fillText("Ball: " + game.ball.left + " " + game.ball.top + " " + game.ball.right + " " + game.ball.bottom , 50 ,200);
+		ctx.fillText("gameRect: " + game.gameRect.left + " " + game.gameRect.top + " " + game.gameRect.right + " " + game.gameRect.bottom, 50 ,250);
+		ctx.fillText("gameState: " + game.gameState, 50 ,300);
+		ctx.fillText("Pause: " + game.pauseRect.left + " " + game.pauseRect.top + " " + game.pauseRect.right + " " + game.pauseRect.bottom , 50 ,350);
+		ctx.fillText("Mouse Rect: " + gameControls.mouse.left + " " + gameControls.mouse.top + " " + gameControls.mouse.right + " " + gameControls.mouse.bottom , 50 ,400);
+		ctx.fillText("Mouse click: " + gameControls.mouse.mouseClick, 50 ,450);
+		ctx.fillText("Automove: " + game.automove, 50 ,500);
+		ctx.fillText("XScale: " + game.xScale + " YScale:" + game.yScale, 50 ,550);
+		ctx.fillText("physicalRect: " + game.physicalRect.left + " " + game.physicalRect.top + " " + game.physicalRect.right + " " + game.physicalRect.bottom, 50 ,600);
+		ctx.fillText("Canvas: " + canvas.width + " " + canvas.height, 50 ,650);
+	}
+};
+
+/*******************************************/
+
+function onLoad() {
+	// Hide scroll bars
+	document.body.style.overflow = "hidden";
+
+	game.resetBall();
+
+	game.animate();  
+	
+	// Listen for keyboard down events
+    document.addEventListener('keydown', function(e) {
+		// Start the Game if we were in demo mode
+    	if(game.isDemo())
+			game.switchToPlayState();
+
+		// Store the key press
+    	gameControls.keyPressed[e.keyCode] = true;
+
+		// Check to see if paused
+		if(gameControls.keyPressed['P'.charCodeAt(0)]) {
+			game.togglePause();
+		}			
+    	
+	}, false);
+
+    // Listen for keyboard up events
+    document.addEventListener('keyup', function(e) {
+        // Store that the key was released
+     	gameControls.keyPressed[e.keyCode] = false;
+    }, false);
+
+ 	// Listen for touchscreen events
+ 	document.addEventListener('touchstart', function(e) {
+		e.preventDefault();
+
+		// Start the Game if we were in demo mode
+		if(game.isDemo())
+			game.switchToPlayState();
+
+		// There can be multiple touches, loop through each of them.
+		for(var i = 0; i < e.touches.length; i++) {
+			var touch = e.changedTouches[i];
+			game.movePaddleXY(touch.pageX, touch.pageY);
+		}
+    }, false);
+ 	
+    document.addEventListener('touchmove', function(e) {
+		e.preventDefault();
+    	
+		if(game.isDemo())
+			game.switchToPlayState();
+
+		// There can be multiple touches, loop through each of them.
+		for(var i = 0; i < e.touches.length; i++) {
+			var touch = e.changedTouches[i];
+			game.movePaddleXY(touch.pageX, touch.pageY);
+		}
+	
+    }, false);
+
+ 	// Listen for mouse events
+    document.addEventListener('mousemove', function(e) {
+    	e.preventDefault();
+
+    	// Store the mouse location
+		gameControls.mouse.left = e.clientX;
+		gameControls.mouse.top = e.clientY;
+    	gameControls.mouse.right = e.clientX;
+    	gameControls.mouse.bottom = e.clientY;
+	
+		// Only move when the mouse is clicked
+		if(gameControls.mouse.mouseClick)
+			game.movePaddleXY(e.clientX, e.clientY);
+				   	
+    }, false);
+
+    document.addEventListener('mousedown', function(e) {
+    	e.preventDefault();
+    	
+		gameControls.mouse.mouseClick = true;
+    }, false);
+
+    document.addEventListener('mouseup', function(e) {
+    	e.preventDefault();
+    	
+    	gameControls.mouse.mouseClick = false;
+
+    	// Start the Game if we are in demo mode
+		if(game.isDemo())
+			game.switchToPlayState();
+
+    	// Store the mouse location
+    	gameControls.mouse.left = e.clientX;
+    	gameControls.mouse.top = e.clientY;
+    	gameControls.mouse.right = e.clientX;
+    	gameControls.mouse.bottom = e.clientY;
+
+    	// Check to see if they clicked the pause button 	
+    	if(intersection(gameControls.mouse, scaleRect(game.pauseRect))) 
+        	game.togglePause();
+   
+    }, false); 
+}
+
+</script>
+
+</body>
+</html>

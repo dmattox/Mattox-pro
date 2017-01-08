@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pageflow:Pageflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pageflow="http://www.sybase.com/suade/pageflow" id="pf14834019692840" configfile="/Mattox-pro/WebContent/WEB-INF/faces-config.xml">
+  <nodes xsi:type="pageflow:PFPage" name="login.xhtml" x="203" y="193" id="pf14834021088891" referenceLink="//@navigationRule.0/@fromViewId|" outlinks="pf14834021088892" path="/login.xhtml"/>
+  <nodes xsi:type="pageflow:PFPage" name="welcome.xhtml" x="456" y="168" id="pf14834021088893" referenceLink="//@navigationRule.0/@navigationCase.0/@toViewId|" inlinks="pf14834021088892" path="/welcome.xhtml"/>
+  <links id="pf14834021088892" target="pf14834021088893" source="pf14834021088891" outcome="login"/>
+</pageflow:Pageflow>
