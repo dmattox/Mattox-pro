@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+<head>
+    <script type="text/javascript" src="network.js"></script>
+    <script type="text/javascript" src="topologies.js"></script>
+    <script type="text/javascript" src="cytoscape.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="jquery.growl.js" type="text/javascript"></script>
+    <link href="jquery.growl.css" rel="stylesheet" type="text/css" />
+
+<style>
+    #cy {
+        position: absolute;
+        left: 27em;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        padding : 10px
+    }
+
+    .config {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 27em;
+        background: #D7CEC7;
+        padding : 5px;
+        color: #D7CEC7;
+    }
+
+    .panelHeader {
+        padding: 5px;
+        text-align: center;
+        background-color: #565656;
+        color: white;
+        border: solid 1px #D7CEC7;
+        font-size:x-large;
+    }
+    .panel, .flip {
+        padding: 5px;
+        text-align: center;
+        background-color: #565656;
+        border: solid 1px #565656;
+        color: white;
+        padding : 5px;
+    }
+
+    .panel {
+        padding: 5px;
+        display: none;
+        justify-content: center;
+    }
+
+    .myButton {
+        -moz-box-shadow:inset 0px 1px 3px 0px #91b8b3;
+        -webkit-box-shadow:inset 0px 1px 3px 0px #91b8b3;
+        box-shadow:inset 0px 1px 3px 0px #91b8b3;
+        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #76323F), color-stop(1, #753F4A));
+        background:-moz-linear-gradient(top, #76323F 5%, #753F4A 100%);
+        background:-webkit-linear-gradient(top, #76323F 5%, #753F4A 100%);
+        background:-o-linear-gradient(top, #76323F 5%, #753F4A 100%);
+        background:-ms-linear-gradient(top, #76323F 5%, #753F4A 100%);
+        background:linear-gradient(to bottom, #76323F 5%, #753F4A 100%);
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#76323F', endColorstr='#753F4A',GradientType=0);
+        background-color:#768d87;
+        -moz-border-radius:5px;
+        -webkit-border-radius:5px;
+        border-radius:5px;
+        border:1px solid #753F4A;
+        display:inline-block;
+        cursor:pointer;
+        color:#ffffff;
+        font-family:Arial;
+        font-size:15px;
+        font-weight:bold;
+        padding:11px 23px;
+        text-decoration:none;
+        text-shadow:0px -1px 0px #2b665e;
+    }
+    .myButton:hover {
+        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
+        background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+        background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+        background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+        background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+        background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
+        background-color:#6c7c7c;
+    }
+    .myButton:active {
+        position:relative;
+        top:1px;
+    }
+</style>
+
+</head>
+
+<body onload="onLoad()">
+    <div id="config" class="config">
+
+    <div class="preamble">
+        <!-- <div class="panelHeader" onclick="onclickHeader()">Spanning Tree Protocol <img src="info.jpg" alt="Info" style="width:25px;height:25px;vertical-align: middle;"></img></div> -->
+        <div class="panelHeader">Spanning Tree Protocol</div>
+        <br></br>
+        <div style="border: thin solid white; padding:10px;">
+            <div class="flip">Change Topology</div>
+            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+
+                <button style="flex-grow: 1" onclick="onclickAddSwitch()" type="button">Add Switch</button>
+                <button style="flex-grow: 1" onclick="onclickDeleteSwitch()" type="button">Delete Switch</button><br></br>
+                <button style="flex-grow: 1" onclick="onclickAddLink()" type="button">Add link</button>
+                <button style="flex-grow: 1" onclick="onclickDeleteLink()" type="button">Delete Link</button>
+            </div>
+        </div>
+        <br></br>
+        <div style="border: thin solid white; padding:10px;">
+            <div class="flip">Control Simulation</div>
+            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+                <input style="flex-grow: 1" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
+                <button style="flex-grow: 1" onclick="onclickRestartSim()" type="button">Restart Simulation</button><br></br>
+            </div>
+        </div>
+        <br></br>
+        <div style="border: thin solid white; padding:10px;">
+            <div class="flip">Preconfigured Topologies</div>
+            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+                <button style="flex-grow: 1" onclick="onclickBasic()" type="button">Basic</button>
+                <button style="flex-grow: 1" onclick="onclickComplex()" type="button">Complex</button><br></br>
+                <button style="flex-grow: 1" onclick="onclickButterfly()" type="button">Butterfly</button><br></br>
+                <button style="flex-grow: 1" onclick="onclickMaze()" type="button">Maze</button><br></br>
+            </div>
+        </div>
+        <br></br>
+        <div id="flip_messages" class="flip">
+            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
+            <label id="messageListLabel" >"Message List"</label>
+        </div>
+        <div id="panel_messages" class="panel">
+            <textarea id="messageList" rows="20" cols="50"></textarea>
+        </div>
+        <br></br>
+        <div id="flip_switches" class="flip">
+            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
+            Switch Details
+        </div>
+        <div id="panel_switches" class="panel">
+            <textarea id="switchList" rows="20" cols="50"></textarea>
+        </div>
+
+    </div>
+    </div>
+
+    <div id="cy"></div>
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#flip_messages").click(function(){
+                $("#panel_messages").slideToggle("slow");
+            });
+        });
+
+        $(document).ready(function(){
+            $("#flip_switches").click(function(){
+                $("#panel_switches").slideToggle("slow");
+            });
+        });
+
+        var theNetwork = {};
+        var cy = {};
+        var timer = {};
+
+        function resetNetwork() {
+            theNetwork = new Network();
+
+            theNetwork.updateMessageDisplay();
+
+            theNetwork.updateSwitchStatusDisplay();
+        }
+
+        function resetTopology() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                style: cytoscape.stylesheet()
+                    .selector('node')
+                    .css({
+                        'content': 'data(id)'
+                    })
+                    .selector(':selected')
+                    .css({
+                        'background-color': 'black',
+                        'line-color': 'black',
+                        'target-arrow-color': 'black',
+                        'source-arrow-color': 'black',
+                        'opacity': 1,
+                        'border-width': 3,
+                        'border-color': '#333'
+                    })
+                    .selector('.faded')
+                    .css({
+                        'opacity': 0.25,
+                        'text-opacity': 0
+                    })
+                    .selector('edge')
+                    .css({
+                        'target-arrow-shape': 'circle',
+                        'source-arrow-shape': 'circle',
+                        'width': 4,
+                        'line-color': '#d7cec7',
+                        'curve-style': 'bezier',
+                        'content': 'data(link)'
+                    }),
+                layout: {
+                    name: 'breadthfirst',
+                    padding: 10
+                }
+            });
+        }
+
+        function onLoad() {
+            resetTopology();
+
+            resetNetwork();
+
+            basicTopology();
+
+            timer = setInterval(messageHandler, 500);
+
+            theNetwork.initialBroadcast();
+        }
+
+        function restartSimulation() {
+            $.growl({ title: "", message: "Restarting simulation."});
+
+            theNetwork.clearSTPProgress();
+
+            theNetwork.initialBroadcast();
+        }
+
+        function messageHandler() {
+            theNetwork.messageHandler();
+        }
+
+        function onclickAddSwitch() {
+            theNetwork.addSwitch();
+            
+            $.growl({ title: "", message: "Switched added."});
+
+            restartSimulation();
+        }
+
+        function onclickDeleteSwitch() {
+            var nodes = cy.$(':selected');
+            if(nodes.length != 1 || !nodes[0].isNode()) {
+                $.growl({ title: "", message: "Please select a single switch."});
+                return;
+            }
+
+            var nodeID = nodes.data('id');
+
+            theNetwork.removeSwitch(nodeID);
+
+            cy.remove(nodes);
+            
+            $.growl({ title: "", message: "Switch deleted."});
+
+            restartSimulation();
+        }
+
+        function onclickAddLink() {
+            // User needs to select two nodes
+            var nodes = cy.$(':selected');
+            if(nodes.length != 2 || !nodes[0].isNode() || !nodes[1].isNode()) {
+                $.growl({ title: "", message: "Please select two switches."});
+                return;
+            }
+
+            var nodeID1 = nodes[0].data('id');
+            var nodeID2 = nodes[1].data('id');
+
+            theNetwork.addLink(nodeID1, nodeID2);
+            
+            $.growl({ title: "", message: "Link added."});
+
+            restartSimulation();
+        }
+
+        function onclickDeleteLink() {
+            // User needs to select a link
+            var nodes = cy.$(':selected');
+            if(nodes.length != 1 || !nodes[0].isEdge()) {
+                $.growl({ title: "", message: "Please select one link."});
+                return;
+            }
+
+            // Get the two nodes this link is associated with
+            var nodeIDs = nodes[0].data('id').split("-");
+
+            theNetwork.deleteLink(nodeIDs[0], nodeIDs[1]);
+
+            cy.remove(nodes);
+            
+            $.growl({ title: "", message: "Link deleted."});
+
+            restartSimulation();
+        }
+
+        function onclickPauseResumeSim(elem) {
+            console.log(elem.value);
+            if(elem.value == "Pause Simulation") {
+                elem.value = "Resume Simulation";
+                clearInterval(timer);
+                
+                $.growl({ title: "", message: "Simulation paused."});
+            }
+            else {
+                elem.value = "Pause Simulation";
+                timer = setInterval(messageHandler, 500);
+                
+                $.growl({ title: "", message: "Simulation resumed."});
+            }
+
+        }
+
+        function onclickRestartSim() {
+            restartSimulation();
+        }
+
+        function onclickBasic() {
+            resetTopology();
+
+            resetNetwork();
+
+            basicTopology();
+
+            theNetwork.initialBroadcast();
+            
+            $.growl({ title: "", message: "Basic topology loaded."});
+        }
+
+        function onclickComplex() {
+            resetTopology();
+
+            resetNetwork();
+
+            complexTopology();
+
+            theNetwork.initialBroadcast();
+            
+            $.growl({ title: "", message: "Complex topology loaded."});
+        }
+
+        function onclickButterfly() {
+            resetTopology();
+
+            resetNetwork();
+
+            butterflyTopology();
+
+            theNetwork.initialBroadcast();
+            
+            $.growl({ title: "", message: "Butterfly topology loaded."});
+        }
+
+        function onclickMaze() {
+            resetTopology();
+
+            resetNetwork();
+
+            mazeTopology();
+
+            theNetwork.initialBroadcast();
+            
+            $.growl({ title: "", message: "Maze topology loaded."});
+        }
+        
+        function onclickHeader() {
+
+        }
+    </script>
+
+
+</body>
+</html>
