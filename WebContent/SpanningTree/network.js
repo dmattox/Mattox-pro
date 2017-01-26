@@ -1,12 +1,23 @@
 'use strict';
 
-var SWITCH_DEFAULT_COLOR = 'grey'; // TAN
-var SWITCH_SENDER_COLOR = 'blue'; // OXBLOOD
-var SWITCH_RECEIVER_COLOR = 'black'; // BLACKBOARD
+var SWITCH_DEFAULT_COLOR = 'grey'; 
+var SWITCH_SENDER_COLOR = 'blue'; 
+var SWITCH_RECEIVER_COLOR = 'black'; 
 
-var LINK_UNKNOWN_COLOR = 'grey'; // GRAIN
-var LINK_BLOCKED_COLOR = 'red'; // TAN
-var LINK_ACTIVE_COLOR = 'green'; // BLACKBOARD
+var LINK_UNKNOWN_COLOR = 'grey'; 
+var LINK_BLOCKED_COLOR = 'red'; 
+var LINK_ACTIVE_COLOR = 'green'; 
+var LINK_DP_COLOR = 'green';
+var LINK_RP_COLOR = 'blue';
+
+var X_SCALE = 80;
+var Y_SCALE = 80;
+
+var SimStateEnum = {
+	NOT_STARTED : "Not Started",
+	IN_PROGRESS : "In Progress",
+	FINISHED : "Finished"
+};
 
 var PortStateEnum = {
     UNKNOWN : "Unknown",
@@ -16,11 +27,18 @@ var PortStateEnum = {
 };
 
 var Message = function(messageSourceID, messageDestinationID, rootNodeID, distance, pathThrough) {
-    this.messageSourceID = messageSourceID;
+    // The switch sending the message
+	this.messageSourceID = messageSourceID;
+	// The switch the message is intended for
     this.messageDestinationID = messageDestinationID;
+    // The current understanding of who the root nood is (not correct at the start)
     this.rootNodeID = rootNodeID;
+    // Distance from the sending switch to the root node
     this.distance = distance;
+    // Does the sending switch need the receiving switch to reach the noode
     this.pathThrough = pathThrough;
+    // Time window the message was generated
+    this.timeWindow = 0;
 };
 
 var Switch = function(switchID) {
@@ -136,13 +154,29 @@ Switch.prototype.clearSTPProgress = function() {
 };
 
 var Network = function() {
-    this.switchList = [];
+    // The list of switches in the network
+	this.switchList = [];
 
+	// The highest switch ID in the network - used for auto creating new switch IDs
     this.maxSwitch = 0;
 
+    // The current queue of messages in the network
     this.networkMessageQueue = [];
 
-    this.currentEdge = null;
+    // The edges currently being handled in a given time window 
+    this.currentEdges = [];
+    
+    // Whether to display port text
+    this.displayPortText = true;
+    
+    // The time window currently being processed - used to have batches of messages being processed instead of all at once
+    this.currentTimeWindow = 0;
+    
+    // Whether messages should be batched into time windows or completely serialized
+    this.serializeMessages = false;
+    
+    // If we are still processing the simulation
+    this.simulationState = SimStateEnum.NOT_STARTED;
 };
 
 Network.prototype.initialBroadcast = function() {
@@ -150,10 +184,16 @@ Network.prototype.initialBroadcast = function() {
         if(this.switchList.hasOwnProperty(currentSwitch)) {
             this.switchList[currentSwitch].initialBroadcast();
         }
+    
+    this.simulationState = SimStateEnum.IN_PROGRESS;
+    
+    this.colorAllEdges();
 };
 
 Network.prototype.sendMessage = function(theMessage) {
     // We want the user to see messages processed
+	theMessage.timeWindow = this.currentTimeWindow;
+	
     this.networkMessageQueue.push(theMessage);
 };
 
@@ -161,36 +201,82 @@ Network.prototype.processMessage = function(theMessage) {
     var node1 = cy.$("#" + theMessage.messageSourceID).style('background-color', SWITCH_SENDER_COLOR);
     var node2 = cy.$('#' + theMessage.messageDestinationID).style('background-color', SWITCH_RECEIVER_COLOR);
 
-    // clear the prior edge
-    if(this.currentEdge != null)
-        this.currentEdge.data('link', '');
-
     // now update the current edge
-    this.currentEdge = node1.edgesWith(node2).data('link', 'Root:' + theMessage.rootNodeID + ' Distance: ' + theMessage.distance);
-
-    this.colorEdges();
+    var currentEdge = node1.edgesWith(node2);
+    //console.log('Source:' + theMessage.messageSourceID + ' Destination: ' + theMessage.messageDestinationID + ' Root:' + theMessage.rootNodeID + ' Distance: ' + theMessage.distance);   
+    currentEdge.data('link', 'Root:' + theMessage.rootNodeID + ' Distance: ' + theMessage.distance);
+    this.currentEdges.push(currentEdge);
 
     this.switchList[theMessage.messageDestinationID].receiveMessage(theMessage);
+    
+    this.colorEdges(theMessage.messageDestinationID, theMessage.messageSourceID);
 };
 
-Network.prototype.colorEdges = function() {
-    // Could be more graceful about this...
+Network.prototype.colorEdges = function(switch1, switch2) {
+    var node1 = cy.$("#" + switch1);
+    var node2 = cy.$("#" + switch2);
+    var edge = node1.edgesWith(node2);
+    
+    // The edge might have the nodes in a different order
+    var edgeNode1 = switch1;
+    var edgeNode2 = switch2;
+    
+    if(edge.data('source') != switch1) {
+    	edgeNode1 = switch2;
+    	edgeNode2 = switch1;
+    }
+
+    var node1PortStatus = this.switchList[edgeNode1].links[edgeNode2];
+    var node2PortStatus = this.switchList[edgeNode2].links[edgeNode1];
+    
+    this.colorEdge(edge, node1PortStatus, node1PortStatus);
+   
+    this.colorPort(edge, 'source-arrow-color', 'source-label', node1PortStatus);
+    
+    this.colorPort(edge, 'target-arrow-color', 'target-label', node2PortStatus);
+
+};
+
+Network.prototype.colorAllEdges = function() {
     for(var switch1 in this.switchList)
         if(this.switchList.hasOwnProperty(switch1))
             for(var switch2 in this.switchList[switch1].links)
-                if(this.switchList[switch1].links.hasOwnProperty(switch2)) {
-                    var node1 = cy.$("#" + switch1);
-                    var node2 = cy.$("#" + switch2);
-                    var edge = node1.edgesWith(node2);
+                if(this.switchList[switch1].links.hasOwnProperty(switch2))
+                    this.colorEdges(switch1, switch2);
+}
 
-                    if(this.switchList[switch1].links[switch2] == PortStateEnum.BLOCKED_PORT)
-                        edge.style('line-color', LINK_BLOCKED_COLOR);
-                    else if(this.switchList[switch1].links[switch2] == PortStateEnum.UNKNOWN)
-                        edge.style('line-color', LINK_UNKNOWN_COLOR);
-                    else
-                        edge.style('line-color', LINK_ACTIVE_COLOR);
-                }
-};
+Network.prototype.colorEdge = function(edge, node1, node2) {
+    if(node1 == PortStateEnum.BLOCKED_PORT || node2 == PortStateEnum.BLOCKED_PORT)
+    	edge.style('line-color', LINK_BLOCKED_COLOR);
+    else if(node1 == PortStateEnum.UNKNOWN || node2 == PortStateEnum.UNKNOWN) 
+    	edge.style('line-color', LINK_UNKNOWN_COLOR);
+    else
+    	edge.style('line-color', LINK_ACTIVE_COLOR);
+}
+
+Network.prototype.colorPort = function(edge, portType, labelType, portStatus) {
+    if(portStatus == PortStateEnum.BLOCKED_PORT) {
+        edge.style(portType, LINK_BLOCKED_COLOR);
+        if(this.displayPortText) 
+        	edge.style(labelType, 'BP');
+    }
+    else if(portStatus == PortStateEnum.UNKNOWN) {    
+        edge.style(portType, LINK_UNKNOWN_COLOR);
+        if(this.displayPortText)
+        	edge.style(labelType, 'UNK');
+    }
+    else if(portStatus == PortStateEnum.DESIGNATED_PORT) {                         
+        edge.style(portType, LINK_DP_COLOR);
+        if(this.displayPortText)
+        	edge.style(labelType, 'DP');
+    }
+    else { // Root Port                  
+        edge.style(portType, LINK_RP_COLOR);
+        if(this.displayPortText)
+        	edge.style(labelType, 'RP');
+    }
+
+}
 
 Network.prototype.updateMessageDisplay = function() {
     var messageString = "";
@@ -206,39 +292,75 @@ Network.prototype.updateSwitchStatusDisplay = function() {
     var switchString = "";
     for(var currentSwitch in this.switchList)
         if(this.switchList.hasOwnProperty(currentSwitch))
-            switchString += 'Node: ' + currentSwitch + ' Root:' + this.switchList[currentSwitch].rootNode.rootNodeID + ' Distance: ' + this.switchList[currentSwitch].rootNode.distance + "\r";
+            switchString += 'Node: ' + currentSwitch + ' Root:' + this.switchList[currentSwitch].rootNode.rootNodeID + ' Source: ' + this.switchList[currentSwitch].rootNode.messageSourceID + ' Distance: ' + this.switchList[currentSwitch].rootNode.distance + "\r";
 
-    document.getElementById('switchList').value = switchString;
+    document.getElementById('switchList').value = switchString; 
 };
 
 Network.prototype.messageHandler = function() {
+	// If we are done with the simulation, we are not going to process anymore messages
+	if(this.simulationState == SimStateEnum.FINISHED)
+		return;
+	
     this.updateMessageDisplay();
 
     this.updateSwitchStatusDisplay();
 
-    for(var currentSwitch in this.switchList)
-        if(this.switchList.hasOwnProperty(currentSwitch))
-            cy.$("#" + currentSwitch).style('background-color', SWITCH_DEFAULT_COLOR );
+    this.clearNodeHighlights();
+    
+    // clear the prior edges
+    this.clearEdgeText();
 
     // Check to see if there are any messages to process
-    if(this.networkMessageQueue.length != 0)
-        this.processMessage(this.networkMessageQueue.shift());
-    else {
-        // Clear the prior edge
-        if(this.currentEdge != null)
-            this.currentEdge.data('link', '');
-    }
+    if(this.networkMessageQueue.length != 0) 
+		if(this.serializeMessages)
+			this.processMessage(this.networkMessageQueue.shift());
+		else {
+	        // Search through all the messages
+	    	var messagesToProcess = this.networkMessageQueue.filter(function(currentMessage){return currentMessage.timeWindow < theNetwork.currentTimeWindow;});
+	    	this.networkMessageQueue = this.networkMessageQueue.filter(function(currentMessage){return currentMessage.timeWindow >= theNetwork.currentTimeWindow;});
+	    	
+	        // Prepare to move to the next time window	
+	        this.currentTimeWindow++;
+	    	
+	    	for(var currentMessageID in messagesToProcess) 
+	    		this.processMessage(messagesToProcess[currentMessageID]);
+		}
+    else { // We are done with simulation
+    	this.simulationState = SimStateEnum.FINISHED;
+    	
+    	this.clearEdgeText();
+    	
+    	$.growl({ title: "", message: "Simulation completed."});
+    } 
 };
+
+Network.prototype.clearNodeHighlights = function() {
+    for(var currentSwitch in this.switchList)
+        if(this.switchList.hasOwnProperty(currentSwitch))
+            cy.$("#" + currentSwitch).style('background-color', SWITCH_DEFAULT_COLOR );	
+}
+
+Network.prototype.clearEdgeText = function() {
+	// Clear the data for each edge
+	for(var currentEdgeID in this.currentEdges)
+		if(this.currentEdges.hasOwnProperty(currentEdgeID)) {
+			this.currentEdges[currentEdgeID].data('link', '');
+		}
+
+	// Now clear the edges
+	this.currentEdges = [];	
+}
 
 Network.prototype.addSwitch = function(switchID, posXParam, posYParam) {
     var posX = 500;
     var posY = 500;
 
     if(arguments.length == 0)
-        switchID = this.maxSwitch;
+        switchID = this.maxSwitch+1;
     else if(arguments.length == 3) {
-        posX = posXParam * 80;
-        posY = posYParam * 80;
+        posX = posXParam * X_SCALE;
+        posY = posYParam * Y_SCALE;
     }
 
 
@@ -251,7 +373,8 @@ Network.prototype.addSwitch = function(switchID, posXParam, posYParam) {
         }
     );
 
-    this.maxSwitch++;
+    if(switchID > this.maxSwitch)
+    	this.maxSwitch = switchID;
 };
 
 Network.prototype.removeSwitch = function(switchID) {

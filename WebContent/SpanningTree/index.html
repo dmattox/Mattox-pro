@@ -20,7 +20,7 @@
 <style>
     #cy {
         position: absolute;
-        left: 27em;
+        left: 28em;
         top: 0;
         bottom: 0;
         right: 0;
@@ -37,6 +37,27 @@
         background: #D7CEC7;
         padding : 5px;
         color: #D7CEC7;
+    }
+    
+    .legend {
+    	position: absolute;
+    	bottom:1cm;
+    	right:1cm;
+    	height:17em;
+    	width:15em;
+    	background: #D7CEC7;
+    	padding : 5px;
+    	color:: #D7CEC7;
+    	z-index = 2;
+    }
+    
+    #cy_legend {
+    	position: absolute;
+    	bottom:0cm;
+    	right:0;
+    	height:17em;
+    	width:15em;
+    	z-index = 2;
     }
 
     .panelHeader {
@@ -62,103 +83,68 @@
         justify-content: center;
     }
 
-    .myButton {
-        -moz-box-shadow:inset 0px 1px 3px 0px #91b8b3;
-        -webkit-box-shadow:inset 0px 1px 3px 0px #91b8b3;
-        box-shadow:inset 0px 1px 3px 0px #91b8b3;
-        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #76323F), color-stop(1, #753F4A));
-        background:-moz-linear-gradient(top, #76323F 5%, #753F4A 100%);
-        background:-webkit-linear-gradient(top, #76323F 5%, #753F4A 100%);
-        background:-o-linear-gradient(top, #76323F 5%, #753F4A 100%);
-        background:-ms-linear-gradient(top, #76323F 5%, #753F4A 100%);
-        background:linear-gradient(to bottom, #76323F 5%, #753F4A 100%);
-        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#76323F', endColorstr='#753F4A',GradientType=0);
-        background-color:#768d87;
-        -moz-border-radius:5px;
-        -webkit-border-radius:5px;
-        border-radius:5px;
-        border:1px solid #753F4A;
-        display:inline-block;
-        cursor:pointer;
-        color:#ffffff;
-        font-family:Arial;
-        font-size:15px;
-        font-weight:bold;
-        padding:11px 23px;
-        text-decoration:none;
-        text-shadow:0px -1px 0px #2b665e;
-    }
-    .myButton:hover {
-        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
-        background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-        background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-        background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-        background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-        background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
-        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
-        background-color:#6c7c7c;
-    }
-    .myButton:active {
-        position:relative;
-        top:1px;
-    }
 </style>
 
 </head>
 
 <body onload="onLoad()">
-    <div id="config" class="config">
-
-    <div class="preamble">
-        <!-- <div class="panelHeader" onclick="onclickHeader()">Spanning Tree Protocol <img src="info.jpg" alt="Info" style="width:25px;height:25px;vertical-align: middle;"></img></div> -->
-        <div class="panelHeader">Spanning Tree Protocol</div>
-        <br></br>
-        <div style="border: thin solid white; padding:10px;">
-            <div class="flip">Change Topology</div>
-            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-
-                <button style="flex-grow: 1" onclick="onclickAddSwitch()" type="button">Add Switch</button>
-                <button style="flex-grow: 1" onclick="onclickDeleteSwitch()" type="button">Delete Switch</button><br></br>
-                <button style="flex-grow: 1" onclick="onclickAddLink()" type="button">Add link</button>
-                <button style="flex-grow: 1" onclick="onclickDeleteLink()" type="button">Delete Link</button>
-            </div>
+    <div id="config" class="config">   
+	    <div class="preamble">
+	        <div class="panelHeader">Spanning Tree Protocol</div>
+	        <br></br>
+	        <div style="border: thin solid white; padding:10px;">
+	            <div class="flip">Change Topology</div>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+	                <button style="flex-grow: 1" onclick="onclickAddSwitch()" type="button">Add Switch</button>
+	                <button style="flex-grow: 1" onclick="onclickDeleteSwitch()" type="button">Delete Switch</button><br></br>
+	                <button style="flex-grow: 1" onclick="onclickAddLink()" type="button">Add link</button>
+	                <button style="flex-grow: 1" onclick="onclickDeleteLink()" type="button">Delete Link</button>
+	            </div>
+	        </div>
+	        <br></br>
+	        <div style="border: thin solid white; padding:10px;">
+	            <div class="flip">Control Simulation</div>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+	                <input style="flex-grow: 1" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
+	                <button style="flex-grow: 1" onclick="onclickRestartSim()" type="button">Restart Simulation</button><br></br>
+	            </div>
+	            <div style="text-align: center;color: black;"><input type="checkbox" id="serializeCheckbox" onchange="onchangeSerialize(this)"></input>Serialize Messages</div>                       
+	        </div>
+	        <br></br>
+	        <div style="border: thin solid white; padding:10px;">
+	            <div class="flip">Preconfigured Topologies</div>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
+	                <button style="flex-grow: 1" onclick="onclickBasic()" type="button">Basic</button>
+	                <button style="flex-grow: 1" onclick="onclickComplex()" type="button">Complex</button><br></br>
+	                <button style="flex-grow: 1" onclick="onclickButterfly()" type="button">Butterfly</button><br></br>
+	                <button style="flex-grow: 1" onclick="onclickRings()" type="button">Rings</button><br></br>
+	                <button style="flex-grow: 1" onclick="onclickMaze()" type="button">Maze</button><br></br>
+	            </div>
+	        </div>
+	        <br></br>
+	        <div id="flip_messages" class="flip">
+	            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
+	            <label id="messageListLabel" >"Message List"</label>
+	        </div>
+	        <div id="panel_messages" class="panel">
+	            <textarea id="messageList" rows="20" cols="50"></textarea>
+	        </div>
+	        <br></br>
+	        <div id="flip_switches" class="flip">
+	            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
+	            Switch Details
+	        </div>
+	        <div id="panel_switches" class="panel">
+	            <textarea id="switchList" rows="20" cols="50"></textarea>
+	        </div>
+	    </div>
+	</div>
+    
+    <div class="legend">
+        <div class="flip">Legend</div>
+        <div style = "color: black; padding:20px;">
+               <div id="cy_legend"></div>
         </div>
-        <br></br>
-        <div style="border: thin solid white; padding:10px;">
-            <div class="flip">Control Simulation</div>
-            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-                <input style="flex-grow: 1" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
-                <button style="flex-grow: 1" onclick="onclickRestartSim()" type="button">Restart Simulation</button><br></br>
-            </div>
-        </div>
-        <br></br>
-        <div style="border: thin solid white; padding:10px;">
-            <div class="flip">Preconfigured Topologies</div>
-            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-                <button style="flex-grow: 1" onclick="onclickBasic()" type="button">Basic</button>
-                <button style="flex-grow: 1" onclick="onclickComplex()" type="button">Complex</button><br></br>
-                <button style="flex-grow: 1" onclick="onclickButterfly()" type="button">Butterfly</button><br></br>
-                <button style="flex-grow: 1" onclick="onclickMaze()" type="button">Maze</button><br></br>
-            </div>
-        </div>
-        <br></br>
-        <div id="flip_messages" class="flip">
-            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
-            <label id="messageListLabel" >"Message List"</label>
-        </div>
-        <div id="panel_messages" class="panel">
-            <textarea id="messageList" rows="20" cols="50"></textarea>
-        </div>
-        <br></br>
-        <div id="flip_switches" class="flip">
-            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
-            Switch Details
-        </div>
-        <div id="panel_switches" class="panel">
-            <textarea id="switchList" rows="20" cols="50"></textarea>
-        </div>
-
-    </div>
     </div>
 
     <div id="cy"></div>
@@ -178,6 +164,7 @@
 
         var theNetwork = {};
         var cy = {};
+        var cy_legend = {};
         var timer = {};
 
         function resetNetwork() {
@@ -185,7 +172,11 @@
 
             theNetwork.updateMessageDisplay();
 
-            theNetwork.updateSwitchStatusDisplay();
+            theNetwork.updateSwitchStatusDisplay();  
+            
+        	theNetwork.serializeMessages = document.getElementById('serializeCheckbox').checked;
+        	console.log(theNetwork.serializeMessages);
+        	
         }
 
         function resetTopology() {
@@ -194,7 +185,10 @@
                 style: cytoscape.stylesheet()
                     .selector('node')
                     .css({
-                        'content': 'data(id)'
+                        'content': 'data(id)',
+                        'text-valign': 'center',
+                        'font-weight': 'bold',
+                        'color': 'white'
                     })
                     .selector(':selected')
                     .css({
@@ -218,7 +212,10 @@
                         'width': 4,
                         'line-color': '#d7cec7',
                         'curve-style': 'bezier',
-                        'content': 'data(link)'
+                        'content': 'data(link)',
+                        'source-label': '',
+                        'source-text-offset': 15,
+                        'target-text-offset': 15
                     }),
                 layout: {
                     name: 'breadthfirst',
@@ -228,23 +225,118 @@
         }
 
         function onLoad() {
-            resetTopology();
+            createLegend();
+        	
+        	resetTopology();
 
-            resetNetwork();
+            resetNetwork();           
 
-            basicTopology();
+            basicTopology();           
 
             timer = setInterval(messageHandler, 500);
 
-            theNetwork.initialBroadcast();
+            theNetwork.initialBroadcast();           
+        }       
+        
+        function createLegend() {
+        	cy_legend = cytoscape({
+                container: document.getElementById('cy_legend'),
+                style: cytoscape.stylesheet()
+                    .selector('node')
+                    .css({
+                        'content': 'data(id)',
+                        'text-valign': 'center',
+                        'font-size': 0,
+                        'background-color': 'grey'
+                    })
+                    .selector(':selected')
+                    .css({
+                        'background-color': 'black',
+                        'line-color': 'black',
+                        'target-arrow-color': 'black',
+                        'source-arrow-color': 'black',
+                        'opacity': 1,
+                        'border-width': 3,
+                        'border-color': '#333'
+                    })
+                    .selector('.faded')
+                    .css({
+                        'opacity': 0.25,
+                        'text-opacity': 0
+                    })
+                    .selector('edge')
+                    .css({
+                        'target-arrow-shape': 'none',
+                        'source-arrow-shape': 'circle',
+                        'width': 4,
+                        'line-color': 'lightgrey',
+                        'curve-style': 'bezier',
+                        'content': 'data(link)',
+                        'source-label': '',
+                        'source-text-offset': 15,
+                        'target-text-offset': 15,
+                        'text-valign': 'top',
+                        'font-weight': 'bold'
+                    }),
+                layout: {
+                    name: 'breadthfirst',
+                    padding: 10
+                }
+            });
+        	       	        	        	
+           	createLegendElement("UNK", "UNK - Unknown Port", LINK_UNKNOWN_COLOR, 'lightgrey', 0, true);
+           	createLegendElement("BP", "BP - Blocked Port", LINK_BLOCKED_COLOR, 'lightgrey', 1, true);
+           	createLegendElement("DP", "DP - Designated Port", LINK_DP_COLOR, 'lightgrey', 2, true);
+           	createLegendElement("RP", "RP - Root Port", LINK_RP_COLOR, 'lightgrey',3, true);
+           	
+           	createLegendElement("Active", "Active Link", 'lightgrey', LINK_ACTIVE_COLOR, 4, false);
+           	createLegendElement("Inactive", "Inactive Link", 'lightgrey', LINK_BLOCKED_COLOR, 5, false);
         }
-
+        
+        function createLegendElement(legend, description, portColor, linkColor, position, showNode) {
+            node1 = legend + '1';
+            node2 = legend + '2';
+            edge = node1 + '-' + node2;
+        	
+            // Add the left most node
+        	cy_legend.add({
+                data: {id: node1},
+                position: { x: 20, y: 50 + position * 40}
+            });
+            cy_legend.$("#" + node1).style('label', '');
+            // Hide the node if not wanted
+            if(!showNode) {
+                cy_legend.$("#" + node1).style('background-color', '#D7CEC7');
+            	cy_legend.$("#" + node1).style('color', '#D7CEC7');
+            }
+            
+            // Add the right most node - will not be visible
+            cy_legend.add({
+                data: {id: node2},
+                position: { x: 240, y: 50 + position * 40}
+            });
+            cy_legend.$("#" + node2).style('background-color', '#D7CEC7');
+            cy_legend.$("#" + node2).style('color', '#D7CEC7');
+            
+            // Add the edge
+            cy_legend.add({
+                data: {
+                    id: edge,
+                    source: node1,
+                    target: node2,
+                    link: description
+                }
+            });            
+            cy_legend.$("#" + edge).style('source-arrow-color', portColor);
+            cy_legend.$("#" + edge).style('line-color', linkColor)
+        }
+        
         function restartSimulation() {
             $.growl({ title: "", message: "Restarting simulation."});
 
             theNetwork.clearSTPProgress();
 
-            theNetwork.initialBroadcast();
+            theNetwork.initialBroadcast();           
         }
 
         function messageHandler() {
@@ -372,6 +464,18 @@
             $.growl({ title: "", message: "Butterfly topology loaded."});
         }
 
+        function onclickRings() {
+            resetTopology();
+
+            resetNetwork();
+
+            ringTopology();
+
+            theNetwork.initialBroadcast();
+            
+            $.growl({ title: "", message: "Ring topology loaded."});        	
+        }
+        
         function onclickMaze() {
             resetTopology();
 
@@ -382,10 +486,10 @@
             theNetwork.initialBroadcast();
             
             $.growl({ title: "", message: "Maze topology loaded."});
-        }
+        }      
         
-        function onclickHeader() {
-
+        function onchangeSerialize(elem) {
+        	theNetwork.serializeMessages = elem.checked;
         }
     </script>
 

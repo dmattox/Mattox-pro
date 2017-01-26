@@ -35,17 +35,17 @@ function basicTopology() {
 }
 
 function complexTopology() {
-    theNetwork.addSwitch(6, 8, 1);
-    theNetwork.addSwitch(7, 8, 2);
-    theNetwork.addSwitch(8, 8, 3);
-    theNetwork.addSwitch(9, 8, 5);
-    theNetwork.addSwitch(10, 8, 6);
-    theNetwork.addSwitch(11, 8, 7);
-    theNetwork.addSwitch(4, 6, 2);
-    theNetwork.addSwitch(5, 6, 6);
-    theNetwork.addSwitch(2, 4, 2);
-    theNetwork.addSwitch(3, 4, 6);
-    theNetwork.addSwitch(1, 2, 4);
+    theNetwork.addSwitch(6, 9, 1);
+    theNetwork.addSwitch(7, 9, 2);
+    theNetwork.addSwitch(8, 9, 3);
+    theNetwork.addSwitch(9, 9, 5);
+    theNetwork.addSwitch(10, 9, 6);
+    theNetwork.addSwitch(11, 9, 7);
+    theNetwork.addSwitch(4, 7, 2);
+    theNetwork.addSwitch(5, 7, 6);
+    theNetwork.addSwitch(2, 5, 2);
+    theNetwork.addSwitch(3, 5, 6);
+    theNetwork.addSwitch(1, 3, 4);
     theNetwork.addSwitch(12, 1, 4);
 
     theNetwork.addLink(12, 1);
@@ -62,6 +62,72 @@ function complexTopology() {
     theNetwork.addLink(5, 10);
     theNetwork.addLink(5, 11);
 
+
+    cy.layout({
+        name: 'preset'
+    });
+
+    cy.reset();
+}
+
+function ringTopology() {
+    theNetwork.addSwitch(10, 1*2, 1*2);
+    theNetwork.addSwitch(11, 2*2, 1*2);
+    theNetwork.addSwitch(12, 3*2, 1*2);
+    theNetwork.addSwitch(13, 4*2, 1*2);
+    theNetwork.addSwitch(14, 5*2, 1*2);
+    theNetwork.addSwitch(15, 1*2, 2*2);
+    theNetwork.addSwitch(16, 5*2, 2*2);
+    theNetwork.addSwitch(17, 1*2, 3*2);
+    theNetwork.addSwitch(18, 5*2, 3*2);
+    theNetwork.addSwitch(19, 1*2, 4*2);
+    theNetwork.addSwitch(20, 2*2, 4*2);
+    theNetwork.addSwitch(21, 3*2, 4*2);
+    theNetwork.addSwitch(22, 4*2, 4*2);
+    theNetwork.addSwitch(23, 5*2, 4*2);
+    theNetwork.addSwitch(50, 3*2, 2*2);
+    theNetwork.addSwitch(51, 4*2, 2*2);
+    theNetwork.addSwitch(52, 6*2, 2*2);
+    theNetwork.addSwitch(53, 7*2, 2*2);
+    theNetwork.addSwitch(54, 3*2, 3*2);
+    theNetwork.addSwitch(55, 7*2, 3*2);
+    theNetwork.addSwitch(56, 7*2, 4*2);
+    theNetwork.addSwitch(57, 3*2, 5*2);
+    theNetwork.addSwitch(58, 5*2, 5*2);
+    theNetwork.addSwitch(59, 7*2, 5*2);
+    theNetwork.addSwitch(99, 4*2, 3*2);
+    
+    theNetwork.addLink(10, 11);
+    theNetwork.addLink(11, 12);
+    theNetwork.addLink(12, 13);
+    theNetwork.addLink(13, 14);
+    theNetwork.addLink(14, 16);
+    theNetwork.addLink(16, 18);
+    theNetwork.addLink(18, 23);
+    theNetwork.addLink(23, 22);
+    theNetwork.addLink(21, 22);
+    theNetwork.addLink(20, 19);
+    theNetwork.addLink(20, 21);
+    theNetwork.addLink(17, 15);
+    theNetwork.addLink(19, 17);
+    theNetwork.addLink(10, 15);
+    theNetwork.addLink(50, 51);
+    theNetwork.addLink(51, 16);
+    theNetwork.addLink(16, 52);
+    theNetwork.addLink(53, 52);
+    theNetwork.addLink(53, 55);
+    theNetwork.addLink(55, 56);
+    theNetwork.addLink(56, 59);
+    theNetwork.addLink(59, 58);
+    theNetwork.addLink(57, 58);
+    theNetwork.addLink(21, 57);
+    theNetwork.addLink(54, 21);
+    theNetwork.addLink(50, 54);
+    theNetwork.addLink(51, 99);
+    theNetwork.addLink(54, 99);
+    theNetwork.addLink(18, 99);
+    theNetwork.addLink(22, 99);
+    
 
     cy.layout({
         name: 'preset'
@@ -335,6 +401,8 @@ function mazeTopology() {
     theNetwork.addLink(99,98);
     theNetwork.addLink(53,52);
     theNetwork.addLink(60,61);
+    
+    theNetwork.displayPortText = false;
 
     cy.layout({
         name: 'preset'
