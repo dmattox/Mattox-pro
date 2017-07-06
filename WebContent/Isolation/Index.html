@@ -1,0 +1,122 @@
+<!-- Copyright 2017 David Mattox  -->
+<!-- Usage of sections of code is granted to use in other projects under fair use-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no"">
+<meta http-equiv="pragma" content="no-cache" />
+  
+<title>Isolation</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="../common_javascript/jquery.growl.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <link href="../common_css/jquery.growl.css" rel="stylesheet" type="text/css" />
+    <link href="../common_css/mattox.css" rel="stylesheet" type="text/css" />
+    
+    <script src="player.js?version=5">"use strict";</script>
+    <script src="ai_move.js?version=5">"use strict";</script>
+    <script src="utility.js?version=5">"use strict";</script>    
+    <script src="board.js?version=5">"use strict";</script>    
+    <script src="isolation.js?version=5">"use strict";</script>
+    
+</head>
+<body onload="onLoad()">
+ 
+	<a style="display:block" href="http://www.mattox.pro">
+		<div class="banner">	
+			<div class="banner_title">David Mattox</div> 
+			<div class="banner_subtitle">Software Engineering Manager</div>
+		</div>
+	</a>
+	
+	<div class="header_seperator"></div>
+	
+    <div id="config" class="config">   
+	    <div class="preamble">
+	        <div class="panelHeader">Isolation</div>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Player 1</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+						<label class="button_label" for="player1Human">Human</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickPlayer1Human()" id="player1Human">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+					
+						<label class="button_label" for="player1LocalAI">Local AI</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer1LocalAI()" id="player1LocalAI">
+	  						<div class="slider"></div>
+						</label>
+					
+	<!--					<label class="button_label" for="player1BasicAI">Cloud AI</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer1BasicAI()" id="player1BasicAI">
+	  						<div class="slider"></div>
+						</label> --->
+						
+						<label class="button_label" for="player1Random">Random</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer1Random()" id="player1Random">
+	  						<div class="slider"></div>
+						</label>
+	            	</div>
+	        </div>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Player 2</div>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+						<label class="button_label" for="player2Human">Human</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickPlayer2Human()" id="player2Human">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+					
+						<label class="button_label" for="player2LocalAI">Local AI</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer2LocalAI()" id="player2LocalAI">
+	  						<div class="slider"></div>
+						</label>
+					
+<!-- 						<label class="button_label" for="player2BasicAI">Cloud AI</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer2BasicAI()" id="player2BasicAI">
+	  						<div class="slider"></div> 
+						</label> -->
+						<label class="button_label" for="player2Random">Random</label>
+		                <label style="flex-grow: 1; margin:auto;" class="switch"> 
+	  						<input type="checkbox" onclick="onclickPlayer2Random()" id="player2Random">
+	  						<div class="slider"></div>
+						</label>			
+	            	</div>           
+	            </div>
+	        </div>
+	        <form>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Board Size</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div class="button_label">Columns</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input class="input" type="range" id="columns" min="3" max="10" value="5" step="1" size="6" 
+		            		onchange="game.updateBoardSize()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
+		            	</div>
+		            	<div class="button_label">Rows</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input type="range" id="rows" min="3" max="10" value="5" step="1" size="6" 
+		            		onchange="game.updateBoardSize()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
+		            	</div>
+		            </div>
+	        </div>
+	        </form>
+	    </div>
+	</div>
+	
+<div id = "isolationDiv" class="game"><canvas tabindex='1' id="isolationCanvas" width ="700px" height="700px"></canvas></div>
+
+</body>
+</html>

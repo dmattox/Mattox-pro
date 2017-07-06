@@ -1,0 +1,327 @@
+@CHARSET "ISO-8859-1";
+
+@import url('https://fonts.googleapis.com/css?family=Open+Sans:700');
+@import url('https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css');
+
+.banner {
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 16vh;
+	width: 100vw;
+	padding: 0;
+	color: #FFFFFF;
+	background: url(../images/banner_background.jpg) 50% 50% no-repeat;
+	background-size: cover;
+} 
+
+.banner_title {
+	text-align: center;
+	vertical-align: middle;
+	line-height: 2em;
+	font-size: 3vw;
+	font-family: "Times New Roman", Times, serif;
+	font-weight: bold;
+	font-style: italic;
+}
+
+.banner_subtitle {
+	text-align: center;
+	vertical-align: middle;
+	line-height: 10px;
+	font-size: 2vw;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+		"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.header_seperator {
+	background-color: #275D6E;
+	position: absolute;
+	left: 0;
+	top: 16vh;
+	height: 2vh;
+	width: 100vw;
+	padding: 0;
+}
+
+.config {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 18vh;
+	width: 15vw;
+	height: 80vh; 
+	background: #D7CEC7;
+	padding: 5px;
+	color: #D7CEC7;
+	overflow-y: auto;
+	margin:0;
+}
+
+#cy {
+	position: absolute;
+	left: 17vw;
+	top: 18vh;
+	height:100vh;
+	width:100vw;
+	padding: 10px
+}
+
+.game {
+	position: absolute;
+	left: 17vw;
+	width: 100vw;
+	top: 18vh;
+	height: 100vh;
+	margin: 0;
+	padding: 0;
+}
+
+.legend {
+	position: absolute;
+	bottom: 1cm;
+	right: 1cm;
+	height: 17em;
+	width: 15em;
+	background: #D7CEC7;
+	padding: 5px;
+	color: : #D7CEC7;
+	z-index
+	=
+	2;
+}
+
+#cy_legend {
+	position: absolute;
+	bottom: 0cm;
+	right: 0;
+	height: 17em;
+	width: 15em;
+	z-index
+	=
+	2;
+}
+
+.panelHeader {
+	padding: 2px;
+	text-align: center;
+	background-color: #565656;
+	color: white;
+	border: solid 1px #D7CEC7;
+	font-size: 1.7vw;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.panel, .flip {
+	padding: 5px;
+	text-align: center;
+	background-color: #565656;
+	border: solid 1px #565656;
+	color: white;
+	padding: 5px;
+	font-size: 1.5vw;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.panel {
+	padding: 4px;
+	display: none;
+	justify-content: center;
+}
+
+.panel_border {
+	border: thin solid white; 
+	padding:10px; 
+	margin-top: 5px;
+}
+
+.label_text {
+	text-color: black;
+	color: black;
+	text-align: center;
+	vertical-align: middle;
+	display: inline-block;
+	line-height: 10px;
+	font-size: 1.5vw;
+	padding: 0px;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.button_label {
+	margin: auto;
+	vertical-align: bottom;
+	display: inline-block;
+	margin-bottom: 0px;
+	margin-top: 0px;
+	text-color: black;
+	color: black;
+	font-size: 1.5vw;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+.button {
+	font-size: 1.2vw;
+	height:3.5vh;
+	flex-grow: 1;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
+	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;	
+}
+
+.switch {
+	position: relative;
+	display: inline-block;
+	width: 5.3vw;
+	height: 3vh;
+	text-color: black;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border-radius: 1.3px;
+	border: 0.2px solid #010101;
+}
+
+.switch input {
+	display: none;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #565656;
+	-webkit-transition: .4s;
+	transition: .4s;
+}
+
+.slider:before {
+	position: absolute;
+	content: "";
+	height: 2.6vh;
+	width: 1.4vw;
+	left: 0.1vw;
+	bottom: 0.1vh;
+	background-color: white;
+	-webkit-transition: .4s;
+	transition: .4s;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border-radius: 1.3px;
+	border: 0.2px solid #010101;
+}
+
+input:checked+.slider {
+	background-color: #3071a9;
+}
+
+input:focus+.slider {
+	box-shadow: 0 0 1px #3071a9;
+}
+
+input:checked+.slider:before {
+	-webkit-transform: translateX(3.6vw);
+	-ms-transform: translateX(3.6vw);
+	transform: translateX(3.6vw);
+}
+
+input[type=range] {
+	-webkit-appearance: none;
+	width: 100%;
+	margin: 7.6px 0;
+}
+
+input[type=range]:focus {
+	outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+	width: 100%;
+	height: 1.5vh;
+	cursor: pointer;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	background: #3071a9;
+	border-radius: 1.3px;
+	border: 0.2px solid #010101;
+}
+
+input[type=range]::-webkit-slider-thumb {
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border: 1px solid #000000;
+	height: 3vh;
+	width: 1.5vw;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+	-webkit-appearance: none;
+	margin-top: -1vh;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+	background: #3071a9;
+}
+
+input[type=range]::-moz-range-track {
+	width: 100%;
+	height: 2.5vh;
+	cursor: pointer;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	background: #3071a9;
+	border-radius: 1.3px;
+	border: 0.2px solid #010101;
+}
+
+input[type=range]::-moz-range-thumb {
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border: 1px solid #000000;
+	height: 3vh;
+	width: 1.5vw;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+}
+
+input[type=range]::-ms-track {
+	width: 100%;
+	height: 2.5vh;
+	cursor: pointer;
+	background: transparent;
+	border-color: transparent;
+	color: transparent;
+}
+
+input[type=range]::-ms-fill-lower {
+	background: #3071a9;
+	border: 0.2px solid #010101;
+	border-radius: 2.6px;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+
+input[type=range]::-ms-fill-upper {
+	background: #3071a9;
+	border: 0.2px solid #010101;
+	border-radius: 2.6px;
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+
+input[type=range]::-ms-thumb {
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border: 1px solid #000000;
+	height: 3vh;
+	width: 1.5vw;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+	height: 2.5vh;
+}
+
+input[type=range]:focus::-ms-fill-lower {
+	background: #3071a9;
+}
+
+input[type=range]:focus::-ms-fill-upper {
+	background: #3071a9;
+}
+

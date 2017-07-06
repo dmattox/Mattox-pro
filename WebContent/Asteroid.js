@@ -86,7 +86,7 @@ GameObject.prototype.collisionCheck = function(otherObject) {
 };
 
 GameObject.prototype.IsClicked = function(x, y) {
-	var scaledRect = new ScaleRect(new Rect(this.x, this.y + Game.scoreRect.height, this.x + this.width, this.y + this.height + Game.scoreRect.height));
+	var scaledRect = new ScaleRect(new Rect(this.x, this.y, this.x + this.width, this.y + this.height));
 	var mouseRect = new Rect(x, y, x + 1, y + 1);
 	
 	return intersection(mouseRect, scaledRect);
@@ -853,12 +853,12 @@ GameControl.prototype.drawObject = function(ctx, offsetX, offsetY) {
 var Game = Object.create(null);
 
 //Define the physical screen
-Game.physicalRect = new Rect(0,0, window.innerWidth, window.innerHeight);
+Game.physicalRect = new Rect(0,0,0,0);
 
 //Define the rectangle for the score section
-Game.scoreRect = new ScoreArea(0, 0, 1000, 75);
+Game.scoreRect = new ScoreArea(0, 0, 1200, 75);
 
-Game.gameRect = new GameArea(0, 0, 1000, 700);
+Game.gameRect = new GameArea(0, 0, 1200, 700);
 
 Game.gameRect.drawObject = function(ctx) {
 	GameArea.prototype.drawObject.call(this, ctx);
@@ -891,8 +891,7 @@ Game.theShip = new AIShipObject(Game.gameRect.width / 2, Game.gameRect.height / 
 Game.exploding = false;
 Game.explodingCounter = 0;
 
-//Game.classicRect = new GameButton(300, 125 - Game.scoreRect.height, 400, 200, "Play Classic Mode", false, true, false, false);
-Game.modernRect = new GameButton(300, 125 - Game.scoreRect.height, 400, 200, "Play", false, true, false, false);
+Game.modernRect = new GameButton(400, 125 - Game.scoreRect.height, 400, 200, "Play", false, true, false, false);
 Game.pauseRect = new GameButton(440, 600, 120, 40, "'P'ause", false, false, true, true);
 
 Game.keyboardButton = new GameButton(50, 175, 200, 100, "Keyboard Control", true, true, false, true);
@@ -904,7 +903,7 @@ Game.thrustRect = new GameControl(138, 334, 150, 150, "Thrust", false, false, tr
 Game.fireRect = new GameControl(625, 334, 334, 315, "Fire", false, false, true, false);
 
 Game.backGroundImage = new Image();
-Game.backGroundImage.src = './BlueSpace.jpg';
+Game.backGroundImage.src = './images/BlueSpace.jpg';
 
 Game.score = 0;
 
@@ -943,23 +942,29 @@ Game.automoveEnum = {
 
 Game.automove = Game.automoveEnum.NONE;
 
-Game.checkScreenResize = function(canvas) {
+Game.checkScreenResize = function(gameCanvas, scoreCanvas) {
+	var parentSize = gameCanvas.parentNode.getBoundingClientRect();
+	
+	var width = parentSize.width - 10;
+	var height = parentSize.height - parentSize.top - 10;
+		
 	// Check to see if the window size has changed
-	if(Game.physicalRect.right != window.innerWidth || Game.physicalRect.bottom != window.innerHeight){
+	if(this.physicalRect.right < width - 10 || this.physicalRect.bottom < height - 10 ||
+			this.physicalRect.right > width + 10 || this.physicalRect.bottom > height + 10){
+		
+		this.physicalRect = new Rect(0,0, width, height);
+		
+		var physicalScoreHeight = this.scoreRect.height / (this.scoreRect.height + this.gameRect.height) * this.physicalRect.bottom;
 
-		this.physicalRect = new Rect(0,0, window.innerWidth, window.innerHeight);
-
-		var physicalScoreHeight = this.scoreRect.height / (this.scoreRect.height + this.gameRect.height) * this.physicalRect.bottom;  
+		scoreCanvas.width = width;
+		scoreCanvas.height = physicalScoreHeight;
+		
+		gameCanvas.width = width;
+		gameCanvas.height = height - physicalScoreHeight;
 
 		this.xScale = this.physicalRect.right / this.gameRect.width;
 		this.yScale = (this.physicalRect.bottom - physicalScoreHeight) / this.gameRect.height;
 	}
-
-	if(window.innerWidth > canvas.width)
-		canvas.width = window.innerWidth;
-
-	if(window.innerHeight > canvas.height)
-		canvas.height = window.innerHeight;
 };
 
 Game.togglePause = function() {
@@ -1277,34 +1282,15 @@ var screen = Object.create(null);
 screen.updateScreen = function() {
 	var scoreCanvas = document.getElementById("scoreCanvas");
 	var gameCanvas = document.getElementById("asteroidCanvas");
-//	var oldCanvas = document.getElementById("oldAsteroidCanvas");
-
-	scoreCanvas.width = window.innerWidth;
-	scoreCanvas.height = scaleY(Game.scoreRect.height);
 
 	var gameCtx = gameCanvas.getContext("2d");
 	var scoreCtx = scoreCanvas.getContext("2d");
-//	var oldCtx = oldCanvas.getContext("2d");
 
-/*	if(Game.isDemo())
-		oldCanvas.style.display = "inline";
-	else
-		oldCanvas.style.display = "none";
-	
-	oldCanvas.style.left = Math.floor(scaleX(300)) + "px";
-	oldCanvas.style.top = Math.floor(scaleY(125)) + "px";
-	oldCanvas.width = Math.floor(scaleX(400));
-	oldCanvas.height = Math.floor(scaleY(200));
-	oldCanvas.style.position = "absolute";*/
-
-	Game.checkScreenResize(gameCanvas); 
+	Game.checkScreenResize(gameCanvas, scoreCanvas); 
 	
 	// Black background
 	gameCtx.fillStyle = "#000000";
 	gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-
-//	oldCtx.fillStyle = "#000000";
-//	oldCtx.fillRect (0, 0, window.innerWidth, window.innerHeight);
 
 	scoreCtx.fillStyle = "#000000";
 	scoreCtx.fillRect (0, 0, window.innerWidth, window.innerHeight);
@@ -1324,7 +1310,6 @@ screen.updateScreen = function() {
 		gameCtx.textBaseline = "middle";
 		gameCtx.fillText("Sorry, screen resolution is too low to play", window.innerWidth/2, window.innerHeight/2);
 
-//		oldCanvas.style.display = "none";
 		return;
 	}
 
@@ -1351,26 +1336,21 @@ screen.updateScreen = function() {
 	Game.drawBullets(gameCtx, Game.gameMode);
 
 	Game.theShip.drawObject(gameCtx, Game.gameMode);
-
-	/*Game.drawAsteroids(oldCtx, false, 300, 125 - Game.scoreRect.height);
-
-	Game.theShip.drawObject(oldCtx, false, 300, 125 - Game.scoreRect.height);	
-
-	Game.drawBullets(oldCtx, false, 300, 125 - Game.scoreRect.height);*/
-
-	// Display this over the game area
-	//Game.classicRect.drawObject(oldCtx, 300, 125 - Game.scoreRect.height);
 	
 	// Debug information
 	if(gameControls.debug){
+		gameParentSize = gameCanvas.parentNode.getBoundingClientRect();
+		scoreParentSize = scoreCanvas.parentNode.getBoundingClientRect();
+		
 		gameCtx.fillStyle = "red";
 		gameCtx.textAlign = "Left";
 		gameCtx.font = scaleText();
 		gameCtx.textBaseline = "top";
 		gameCtx.textAlign = "left";
 		gameCtx.fillText("Game.theShip: " + Math.floor(Game.theShip.x) + " " + Math.floor(Game.theShip.y) + " " + Game.theShip.width + " " + Game.theShip.height + " Shield On:" + " " + Game.theShip.objectPoints + " xVel:" + Math.floor(Game.theShip.xVelocity * 100) / 100 + " yVel:" + Math.floor(Game.theShip.yVelocity * 100) / 100 + " direction:" + Game.theShip.direction + " target angle:" + Game.theShip.targetAngle, scaleX(50) ,scaleY(50));
+		gameCtx.fillText("gameParentRect: " + gameParentSize.left + " " + gameParentSize.top + " " + gameParentSize.width + " " + gameParentSize.height + " scoreParentRect: " + scoreParentSize.left + " " + scoreParentSize.top + " " + scoreParentSize.width + " " + scoreParentSize.height, scaleX(50), scaleY(100));
 		gameCtx.fillText("Asteroids: " + Game.asteroidList.length, scaleX(50) ,scaleY(150));
-		gameCtx.fillText("gameRect: " + Game.gameRect.x + " " + Game.gameRect.y + " " + Game.gameRect.width + " " + Game.gameRect.height, scaleX(50), scaleY(250));
+		gameCtx.fillText("gameRect: " + Game.gameRect.x + " " + Game.gameRect.y + " " + Game.gameRect.width + " " + Game.gameRect.height + " scoreRect: " + Game.scoreRect.x + " " + Game.scoreRect.y + " " + Game.scoreRect.width + " " + Game.scoreRect.height, scaleX(50), scaleY(250));
 		gameCtx.fillText("gameState: " + Game.gameState + " Exploding:" + Game.exploding + " Counter:" + Game.explodingCounter, scaleX(50) ,scaleY(300));
 		gameCtx.fillText("Pause: " + Game.pauseRect.x + " " + Game.pauseRect.y + " " + Game.pauseRect.width + " " + Game.pauseRect.height , scaleX(50) ,scaleY(350));
 		gameCtx.fillText("Mouse Rect: " + gameControls.mouse.left + " " + gameControls.mouse.top + " " + gameControls.mouse.right + " " + gameControls.mouse.bottom , scaleX(50) ,scaleY(400));
@@ -1394,8 +1374,10 @@ function onLoad() {
 
 	Game.animate();  
 	
+	var gameCanvas = document.getElementById("asteroidCanvas");
+	
 	// Listen for keyboard down events
-    document.addEventListener('keydown', function(e) {
+	document.addEventListener('keydown', function(e) {
     	gameControls.detectedNonTablet = true; // we know we aren't a tablet only interface now
 
 		// Store the key press
@@ -1409,13 +1391,13 @@ function onLoad() {
 	}, false);
 
     // Listen for keyboard up events
-    document.addEventListener('keyup', function(e) {
+	document.addEventListener('keyup', function(e) {
         // Store that the key was released
      	gameControls.keyPressed[e.keyCode] = false;
     }, false);
 
  	// Listen for touchscreen events
- 	document.addEventListener('touchstart', function(e) {
+	gameCanvas.addEventListener('touchstart', function(e) {
 		e.preventDefault();
 
 		// There can be multiple touches, loop through each of them.
@@ -1426,7 +1408,7 @@ function onLoad() {
 		}
     }, false);
  	
-    document.addEventListener('touchmove', function(e) {
+	gameCanvas.addEventListener('touchmove', function(e) {
 		e.preventDefault();
     	
 		// There can be multiple touches, loop through each of them.
@@ -1439,50 +1421,50 @@ function onLoad() {
     }, false);
 
  	// Listen for mouse events
-    document.addEventListener('mousemove', function(e) {
+	gameCanvas.addEventListener('mousemove', function(e) {
     	gameControls.detectedNonTablet = true; // we know we aren't a tablet only interface now
     	
     	e.preventDefault();
 
     	// Store the mouse location
-		gameControls.mouse.left = e.clientX;
-		gameControls.mouse.top = e.clientY;
-    	gameControls.mouse.right = e.clientX;
-    	gameControls.mouse.bottom = e.clientY;
+		gameControls.mouse.left = e.layerX;
+		gameControls.mouse.top = e.layerY;
+    	gameControls.mouse.right = e.layerX;
+    	gameControls.mouse.bottom = e.layerY;
 
-    	if(Game.keyboardButton.IsClicked(e.clientX, e.clientY)) 
+    	if(Game.keyboardButton.IsClicked(e.layerX, e.layerY)) 
     		Game.keyboardButton.isHovering = true; 
     	else
     		Game.keyboardButton.isHovering = false;
 
-    	if(Game.touchButton.IsClicked(e.clientX, e.clientY))  
+    	if(Game.touchButton.IsClicked(e.layerX, e.layerY))  
     		Game.touchButton.isHovering = true;
     	else
     		Game.touchButton.isHovering = false;
 
-		Game.shipControl(e.clientX, e.clientY);
+		Game.shipControl(e.layerX, e.layerY);
     }, false);
 
-    document.addEventListener('mousedown', function(e) {
+	gameCanvas.addEventListener('mousedown', function(e) {
     	e.preventDefault();
     	
 		gameControls.mouse.mouseClick = true;
 
-		Game.shipControl(e.clientX, e.clientY);
+		Game.shipControl(e.layerX, e.layerY);
     }, false);
 
-    document.addEventListener('mouseup', function(e) {
+	gameCanvas.addEventListener('mouseup', function(e) {
     	e.preventDefault();
     	
     	gameControls.mouse.mouseClick = false;
 
     	// Store the mouse location
-    	gameControls.mouse.left = e.clientX;
-    	gameControls.mouse.top = e.clientY;
-    	gameControls.mouse.right = e.clientX;
-    	gameControls.mouse.bottom = e.clientY;
+    	gameControls.mouse.left = e.layerX;
+    	gameControls.mouse.top = e.layerY;
+    	gameControls.mouse.right = e.layerX;
+    	gameControls.mouse.bottom = e.layerY;
 
-		Game.gameMenu(e.clientX, e.clientY);
+		Game.gameMenu(e.layerX, e.layerY);
     }, false);
 
 }

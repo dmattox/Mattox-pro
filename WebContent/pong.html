@@ -7,10 +7,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   
 <title>Pong</title>
+
+<link href="mattox.css" rel="stylesheet" type="text/css" />
+
+<style>
+.game {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	top: 10em;
+	height: 100vh;
+	margin: 0;
+	padding: 0;
+}
+</style>
+
 </head>
 <body onload="onLoad()">
 
-<canvas id="pongCanvas" width=1024 height=768></canvas>
+<a style="display:block" href="http://www.mattox.pro">
+	<div class="banner">	
+		<div class="banner_title">David Mattox</div> 
+		<div class="banner_subtitle">Software Engineering Manager</div>
+	</div>
+</a>
+	
+<div class="header_seperator"></div>
+
+<div class="game"><canvas id="pongCanvas"></canvas></div>
 
 
 <script>
@@ -207,12 +231,18 @@ game.automoveEnum = {
 game.automove = game.automoveEnum.NONE;
 
 game.checkScreenResize = function(canvas) {
+	var parentSize = canvas.parentNode.getBoundingClientRect();
+	
+	var width = parentSize.width - parentSize.left;
+	var height = parentSize.height - parentSize.top;
+	
 	// Check to see if the window size has changed
-	if(game.physicalRect.right != window.innerWidth || game.physicalRect.bottom != window.innerHeight){
-		canvas.width = window.innerWidth;
-		canvas.height = window.innerHeight;
+	if(game.physicalRect.right < width - 10 || game.physicalRect.bottom < height - 10 ||
+			game.physicalRect.right > width + 10 || game.physicalRect.bottom > height + 10){
+		canvas.width = width;
+		canvas.height = height;
 
-		this.physicalRect = new Rect(0,0, window.innerWidth, window.innerHeight);
+		this.physicalRect = new Rect(0,0, width, height);
 
 		this.xScale = this.physicalRect.right / this.gameRect.right;
 		this.yScale = this.physicalRect.bottom / this.gameRect.bottom;

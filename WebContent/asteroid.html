@@ -2,31 +2,63 @@
 <!-- Usage of sections of code is granted to use in other projects under fair use-->
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="ISO-8859-1">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
-<title>Asteroids</title>
-</head>
-<body onload="onLoad()">
-
-<div id="canvasDiv" style="position:relative; width:1024px; height:800px">
-<canvas id="scoreCanvas" 
-	style="z-index:1 position:absolute; left:0px; top:0px;"
-	width=1024px height=75px>
-</canvas>
-<canvas id="asteroidCanvas" 
-	style="z-index:1 position:absolute; left:0px; top:75px;"
-	width=1024px height=768px>
-</canvas>
-<canvas id="oldAsteroidCanvas" 
-	style="z-index:2 position:absolute; left:200px; top:200px;"
-	width="200px" height="200px">
-</canvas>
-</div>
-
-<script src="util.js"></script>
-<script src="Asteroid.js">"use strict";</script>
-
-</body>
+	<head>
+		<meta charset="ISO-8859-1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		
+		<link href="mattox.css" rel="stylesheet" type="text/css" />
+		
+		<title>Asteroids</title>
+		
+		<style>
+		.game {
+			position: relative;
+			left: 0;
+			width: 100%;
+			top: 10em;
+			height: 200;
+			margin: 0;
+			padding: 0;
+			z-index:1;
+		}
+		.scoreCanvas {
+			position: relative;
+			left: 0;
+			width: 100%;
+			top: 0;
+			height: 75;
+			margin: 0;
+			padding: 0;
+			z-index:1;
+		}
+		.gameCanvas {
+			position: relative;
+			left: 0;
+			width: 100%;
+			top: 0;
+			margin: 0;
+			padding: 0;
+			z-index:1;
+		}
+		</style>
+	</head>
+	
+	<body onload="onLoad()">
+		<a style="display:block" href="http://www.mattox.pro">
+			<div class="banner">	
+				<div class="banner_title">David Mattox</div> 
+				<div class="banner_subtitle">Software Engineering Manager</div>
+			</div>
+		</a>
+		<div class="header_seperator"></div>
+		
+		<div id="gameDiv" class="game">
+		<canvas id="scoreCanvas" class="scoreCanvas">	</canvas>
+		<canvas id="asteroidCanvas" class="gameCanvas">	</canvas>
+		</div>
+		
+		<script src="util.js"></script>
+		<script src="Asteroid.js">"use strict";</script>
+	
+	</body>
 </html>
