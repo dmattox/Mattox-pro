@@ -424,7 +424,7 @@ Game.prototype.getSquareRect = function(col, row) {
 // Returns the square based on the passed in coordinates. Must be scaled to the virtual size - position
 Game.prototype.getVirtualSquare = function(x, y) {
 	var square = new Point(Math.floor(x / game.squareWidth), Math.floor(y / game.squareHeight));
-	if(square.col < 0 || square.row < 0 || square.col >= game.columns || square.row >= game.rows)
+	if(square.col < 0 || square.row < 0 || square.col >= game.board.columns || square.row >= game.board.rows)
 		square = new Point(-1, -1);
 	return square;
 }

@@ -1,0 +1,107 @@
+<!-- Copyright 2017 David Mattox  -->
+<!-- Usage of sections of code is granted to use in other projects under fair use-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no"">
+<meta http-equiv="pragma" content="no-cache" />
+  
+<title>Search</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="../common_javascript/jquery.growl.js" type="text/javascript"></script>
+    <script src="../common_javascript/FastPriorityQueue.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <link href="../common_css/jquery.growl.css" rel="stylesheet" type="text/css" />
+    <link href="../common_css/mattox.css" rel="stylesheet" type="text/css" />
+      
+    <script src="board.js?version=1">"use strict";</script>
+    <script src="utility.js?version=1">"use strict";</script>       
+    <script src="search.js?version=1">"use strict";</script>
+    <script src="game.js?version=1">"use strict";</script>
+    
+</head>
+<body onload="onLoad()">
+ 
+	<a style="display:block" href="http://www.mattox.pro">
+		<div class="banner">	
+			<div class="banner_title">David Mattox</div> 
+			<div class="banner_subtitle">Software Engineering Manager</div>
+		</div>
+	</a>
+	
+	<div class="header_seperator"></div>
+	
+    <div id="config" class="config">   
+	    <div class="preamble">
+	        <div class="panelHeader">Search</div>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Algorithm</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	            		<label class="button_label" for="breadthFirstSearch">Breadth First</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickBreadthFirstSearch(this)" id="breadthFirstSearch">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+						
+						<label class="button_label" for="depthFirstSearch">Depth First</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickDepthFirstSearch(this)" id="depthFirstSearch">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>						
+						
+						<label class="button_label" for="uniformCostSearch">Uniform-cost</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickUniformCostSearch(this)" id="uniformCostSearch">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+						
+						<label class="button_label" for="aStarSearch">A* Search</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickAStarSearch(this)" id="aStarSearch">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+						
+		                <BR>
+		                <label class="button_label" for="randomCost">Random Cost</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickRandomCost(this)" id="randomCost">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+		                
+		                
+	            	</div>
+	        </div>
+	        <form>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Board</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div class="button_label">Columns</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input class="input" type="range" id="columns" min="10" max="60" value="40" step="2"  
+		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
+		            	</div>
+		            	<div class="button_label">Rows</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input type="range" id="rows" min="10" max="30" value="20" step="2" 
+		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
+		            	</div>
+		                <div class="button_label">Block Density</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input type="range" id="blockDensity" min="0" max="90" value="20" step="2" 
+		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
+		            	</div>
+		            </div>
+	        </div>
+	        </form>
+	    </div>
+	</div>
+	
+<div id = "isolationDiv" class="game"><canvas style="padding: 5;" tabindex='1' id="searchCanvas" width ="700px" height="700px"></canvas></div>
+
+</body>
+</html>

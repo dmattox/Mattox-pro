@@ -4,9 +4,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="http://xmlns.jcp.org/jsf/core">
+      xmlns:f="http://xmlns.jcp.org/jsf/core">      
 
 <head>
+	<meta charset="ISO-8859-1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no"">
+	<meta http-equiv="pragma" content="no-cache" />
+
     <script type="text/javascript" src="network.js"></script>
     <script type="text/javascript" src="topologies.js"></script>
     <script type="text/javascript" src="cytoscape.js"></script>
@@ -14,37 +18,17 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js" type="text/javascript"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="jquery.growl.js" type="text/javascript"></script>
-    <link href="jquery.growl.css" rel="stylesheet" type="text/css" />
+    <script src="../common_javascript/jquery.growl.js" type="text/javascript"></script>
+    <link href="../common_css/jquery.growl.css" rel="stylesheet" type="text/css" />
+    <link href="../common_css/mattox.css" rel="stylesheet" type="text/css" />
 
-<style>
-    #cy {
-        position: absolute;
-        left: 28em;
-        top: 0;
-        bottom: 0;
-        right: 0;
-        padding : 10px
-    }
-
-    .config {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 27em;
-        background: #D7CEC7;
-        padding : 5px;
-        color: #D7CEC7;
-    }
-    
+<style>   
     .legend {
     	position: absolute;
-    	bottom:1cm;
+    	bottom:1cm; 
     	right:1cm;
-    	height:17em;
-    	width:15em;
+    	height:32vh;
+    	width:13vw;
     	background: #D7CEC7;
     	padding : 5px;
     	color:: #D7CEC7;
@@ -53,34 +37,11 @@
     
     #cy_legend {
     	position: absolute;
-    	bottom:0cm;
-    	right:0;
-    	height:17em;
-    	width:15em;
+    	bottom:0cm; 
+    	right:1vw;
+    	height:30vh;
+    	width:12vw; 
     	z-index = 2;
-    }
-
-    .panelHeader {
-        padding: 5px;
-        text-align: center;
-        background-color: #565656;
-        color: white;
-        border: solid 1px #D7CEC7;
-        font-size:x-large;
-    }
-    .panel, .flip {
-        padding: 5px;
-        text-align: center;
-        background-color: #565656;
-        border: solid 1px #565656;
-        color: white;
-        padding : 5px;
-    }
-
-    .panel {
-        padding: 5px;
-        display: none;
-        justify-content: center;
     }
 
 </style>
@@ -88,40 +49,44 @@
 </head>
 
 <body onload="onLoad()">
+	<a style="display:block" href="http://www.mattox.pro">
+		<div class="banner">	
+			<div class="banner_title">David Mattox</div> 
+			<div class="banner_subtitle">Software Engineering Manager</div>
+		</div>
+	</a>
+	<div class="header_seperator"></div>
+		
     <div id="config" class="config">   
 	    <div class="preamble">
 	        <div class="panelHeader">Spanning Tree Protocol</div>
-	        <br></br>
-	        <div style="border: thin solid white; padding:10px;">
+	        <div class="panel_border">
 	            <div class="flip">Change Topology</div>
-	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-	                <button style="flex-grow: 1" onclick="onclickAddSwitch()" type="button">Add Switch</button>
-	                <button style="flex-grow: 1" onclick="onclickDeleteSwitch()" type="button">Delete Switch</button><br></br>
-	                <button style="flex-grow: 1" onclick="onclickAddLink()" type="button">Add link</button>
-	                <button style="flex-grow: 1" onclick="onclickDeleteLink()" type="button">Delete Link</button>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	                <button class="button" onclick="onclickAddSwitch()" type="button">Add Switch</button>
+	                <button class="button" onclick="onclickDeleteSwitch()" type="button">Delete Switch</button><br>
+	                <button class="button" onclick="onclickAddLink()" type="button">Add link</button>
+	                <button class="button" onclick="onclickDeleteLink()" type="button">Delete Link</button>	                
 	            </div>
 	        </div>
-	        <br></br>
-	        <div style="border: thin solid white; padding:10px;">
+	        <div class="panel_border">
 	            <div class="flip">Control Simulation</div>
-	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-	                <input style="flex-grow: 1" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
-	                <button style="flex-grow: 1" onclick="onclickRestartSim()" type="button">Restart Simulation</button><br></br>
-	            </div>
-	            <div style="text-align: center;color: black;"><input type="checkbox" id="serializeCheckbox" onchange="onchangeSerialize(this)"></input>Serialize Messages</div>                       
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	                <input class="button" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
+	                <button class="button" onclick="onclickRestartSim()" type="button">Restart Simulation</button>
+	                <div class="label_text" style="text-align: center;color: black; font-size:1.2vw; margin: 5px;"><input type="checkbox" id="serializeCheckbox" onchange="onchangeSerialize(this)"></input>Serialize Messages</div>
+	            </div>                       
 	        </div>
-	        <br></br>
-	        <div style="border: thin solid white; padding:10px;">
+	        <div class="panel_border">
 	            <div class="flip">Preconfigured Topologies</div>
-	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:row;">
-	                <button style="flex-grow: 1" onclick="onclickBasic()" type="button">Basic</button>
-	                <button style="flex-grow: 1" onclick="onclickComplex()" type="button">Complex</button><br></br>
-	                <button style="flex-grow: 1" onclick="onclickButterfly()" type="button">Butterfly</button><br></br>
-	                <button style="flex-grow: 1" onclick="onclickRings()" type="button">Rings</button><br></br>
-	                <button style="flex-grow: 1" onclick="onclickMaze()" type="button">Maze</button><br></br>
+	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	                <button class="button" onclick="onclickBasic()" type="button">Basic</button>
+	                <button class="button" onclick="onclickComplex()" type="button">Complex</button>
+	                <button class="button" onclick="onclickButterfly()" type="button">Butterfly</button>
+	                <button class="button" onclick="onclickRings()" type="button">Rings</button>
+	                <button class="button" onclick="onclickMaze()" type="button">Maze</button>
 	            </div>
 	        </div>
-	        <br></br>
 	        <div id="flip_messages" class="flip">
 	            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
 	            <label id="messageListLabel" >"Message List"</label>
@@ -129,7 +94,7 @@
 	        <div id="panel_messages" class="panel">
 	            <textarea id="messageList" rows="20" cols="50"></textarea>
 	        </div>
-	        <br></br>
+	        <br>
 	        <div id="flip_switches" class="flip">
 	            <img src="down_white.png" alt="Info" style="width:15px;height:15px;vertical-align: middle;"></img>
 	            Switch Details
@@ -328,7 +293,7 @@
                 }
             });            
             cy_legend.$("#" + edge).style('source-arrow-color', portColor);
-            cy_legend.$("#" + edge).style('line-color', linkColor)
+            cy_legend.$("#" + edge).style('line-color', linkColor);
         }
         
         function restartSimulation() {
