@@ -1,0 +1,76 @@
+<!-- Copyright 2017 David Mattox  -->
+<!-- Usage of sections of code is granted to use in other projects under fair use-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable = no"">
+<meta http-equiv="pragma" content="no-cache" />
+  
+<title>N Queens</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="../common_javascript/jquery.growl.js" type="text/javascript"></script>
+    <script src="../common_javascript/FastPriorityQueue.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+    <link href="../common_css/jquery.growl.css" rel="stylesheet" type="text/css" />
+    <link href="../common_css/mattox.css" rel="stylesheet" type="text/css" />
+      
+    <script src="board.js?version=1">"use strict";</script>
+    <script src="genetic.js?version=1">"use strict";</script>
+    <script src="utility.js?version=1">"use strict";</script>       
+    <script src="game.js?version=1">"use strict";</script>    
+    
+</head>
+<body onload="onLoad()">
+ 
+	<a style="display:block" href="http://www.mattox.pro">
+		<div class="banner">	
+			<div class="banner_title">David Mattox</div> 
+			<div class="banner_subtitle">Software Engineering Manager</div>
+		</div>
+	</a>
+	
+	<div class="header_seperator"></div>
+	
+    <div id="config" class="config">   
+	    <div class="preamble">
+	        <div class="panelHeader">N Queens</div>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Player</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	            		<label class="button_label" for="humanPlayer">Human</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickHumanPlayer(this)" id="humanPlayer">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>
+						
+						<label class="button_label" for="geneticPlayer">Genetic</label>
+		                <label style="margin:auto;" class="switch"> 
+	  						<input style="margin:auto;" type="checkbox" onclick="onclickGeneticPlayer(this)" id="geneticPlayer">
+	  						<div style="margin:auto;" class="slider"></div>
+						</label>								                
+	            	</div>
+	        </div>
+	        <form>
+	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	            <div class="flip">Board</div>
+	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div class="button_label" id="sizeLabel">Size</div>
+		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            		<input class="input" type="range" id="size" min="4" max="20" value="8" step="2"  
+		            		onchange="onclickSize();" onmouseup="onclickSize();" onkeypress="onclickSize()" onpaste="onclickSize();" oninput="onclickSize()">
+		            	</div>
+		            </div>
+	        </div>
+	        </form>
+	    </div>
+	</div>
+	
+<div id = "isolationDiv" class="game"><canvas style="padding: 5;" tabindex='1' id="searchCanvas" width ="700px" height="700px"></canvas></div>
+
+</body>
+</html>

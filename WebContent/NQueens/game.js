@@ -16,25 +16,38 @@ ScoreRect.prototype.contructor = ScoreRect;
 
 //Score area overrides basic GameObject draw
 ScoreRect.prototype.draw = function(ctx) {
-	if(game.path != null) {
-		ctx.textBaseline = "middle";
-		ctx.font = scaleText();
-		ctx.fillStyle = "black";
-		ctx.textAlign = "center";
-		
-		if(game.pathLength > 0) {
-			ctx.fillText("Path Length: " + game.pathLength + "    Distance: " + game.distance + "    Nodes Explored: " + game.searchCounter,scaleX(this.width()/2),scaleY(25));			
-		}
-		else
-		{					
-			ctx.fillText("No path found!" ,scaleX(this.width()/2),scaleY(25));
-		}
-	}
+	ctx.stroke();
+	ctx.closePath();
+	ctx.beginPath();
+	
+	ctx.font = scaleText(-5);
+	
+	ctx.strokeStyle = "black";
+	ctx.fillStyle = "black";
+	
+	ctx.textAlign = "center";
+
+	var printString;
+	
+	if(game.board.totalAttacks > 0) 
+		printString = "Total attacks: " + game.board.totalAttacks;
+	else
+		printString = "Solution Found! " ;
+	
+	if(game.gamePlayer == game.gamePlayerTypeEnum.GENETIC)
+		printString += " Generation:" + game.geneticPlayer.generation
+	
+	ctx.fillText(printString ,scaleX(this.width()/2),scaleY(25));
+	
+	ctx.stroke();
+	ctx.closePath();
+	ctx.beginPath();
 };
 
 /*******************************************/
 
-const START_COLOR = "blue";
+const QUEEN_TEXT_COLOR = "blue";
+const QUEEN_ATTACK_TEXT_COLOR = "red";
 const DEST_COLOR = "green";
 const BLOCKED_COLOR = "grey";
 const PATH_COLOR = "purple";
@@ -46,6 +59,16 @@ const ICON_NUMBER_COLOR = "black";
 // Defines the game area and all related drawing activities
 function GameRect(left, top, right, bottom) {
 	GameObject.call(this, left, top, right, bottom)
+	
+	// Queen image objects
+	this.whiteQueenImage = new Image();
+	this.whiteQueenImage.src = '../images/queen.png';
+	
+	this.redQueenImage = new Image();
+	this.redQueenImage.src = '../images/queen-red.png';
+	
+	this.greenQueenImage = new Image();
+	this.greenQueenImage.src = '../images/queen-green.png';	
 }
 
 GameRect.prototype = Object.create(GameObject.prototype);
@@ -65,11 +88,6 @@ GameRect.prototype.printMessage = function(ctx, currentRect, text, color, align,
 	ctx.stroke();
 	ctx.closePath();
 	ctx.beginPath();
-}
-
-// Draws an individual game piece as text
-GameRect.prototype.drawGamePiece = function(ctx, currentRect, gameText, color, size = 35) {
-	this.printMessage(ctx, currentRect, gameText, color, "center", size);
 }
 
 // Colors in a board square
@@ -114,34 +132,18 @@ GameRect.prototype.highlightBox = function(ctx, currentBox, color) {
 
 // Draws the main game board along with the game pieces and colors squares which are no longer available
 GameRect.prototype.drawGameBoard = function(ctx) {
-	for(var col = 0; col < game.board.columns; col++) {
-		for(var row = 0; row < game.board.rows; row++) {
+	for(var col = 0; col < game.board.size; col++) {
+		for(var row = 0; row < game.board.size; row++) {
 			
 			var currentRect = game.getSquareRect(col, row);
 			
-			switch(game.board.boardGrid[col][row].type) {
+			switch(game.board.boardGrid[col][row]) {
 			case game.board.gameBoardEnum.EMPTY_SPACE:
-				// If we have random costs enabled, display them
-				if(game.randomCost)
-					this.drawGamePiece(ctx, currentRect, game.board.boardGrid[col][row].weight, ICON_NUMBER_COLOR, -5);
 				
 				break;			
-			case game.board.gameBoardEnum.STARTING:
-				this.shadeBox(ctx, currentRect, START_COLOR);
-				
-				this.drawGamePiece(ctx, currentRect, "S", ICON_TEXT_COLOR, -5);
-				
-				break;
-			
-			case game.board.gameBoardEnum.DESTINATION:
-				this.shadeBox(ctx, currentRect, DEST_COLOR);;
-				
-				this.drawGamePiece(ctx, currentRect, "D", ICON_TEXT_COLOR, -5);								
-				
-				break;
-			
-			case game.board.gameBoardEnum.USED_SPACE:
-				this.shadeBox(ctx, currentRect, BLOCKED_COLOR);
+			default: // Must be a queen				
+				var currentQueenID = game.board.boardGrid[col][row];
+				this.drawQueen(ctx, currentRect, new Point(col, row), currentQueenID, game.board.queenList[currentQueenID].attackCount);
 				
 				break;
 			}
@@ -198,87 +200,6 @@ GameRect.prototype.displayMainMessage = function(ctx, message) {
 
 }
 
-// Handles the transition animation when a piece loses
-GameRect.prototype.animateEndState = function(ctx) {
-	if(game.isEndState()) {
-		
-		var currentRect = game.getSquareRect(game.losingPlayer.getQueenLocation().col, game.losingPlayer.getQueenLocation().row);
-
-		if(game.endingGameCounter <= 100) 
-			ctx.globalAlpha = game.endingGameCounter / 100;
-		else
-			ctx.globalAlpha = 1.0;
-
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-		
-		ctx.fillStyle = "red";
-				
-    	ctx.fillRect(scaleX(currentRect.left)+5, 
-				       scaleY(currentRect.top + game.scoreRect.height())+5, 
-				       scaleX(currentRect.width())-5, 
-				       scaleY(currentRect.height())-5);
-
-    	this.displayMainMessage(ctx, game.winningPlayer.getPlayerTitle() + " won!");
-			
-	}
-}
-
-GameRect.prototype.animateMovingTransition = function(ctx) {
-	if(game.isMovingTransitionState()) {
-		
-		var newRect = game.getSquareRect(game.newQueen.getQueenLocation().col, game.newQueen.getQueenLocation().row);
-	
-		if(game.movingTransitionCounter <= 100) 
-			ctx.globalAlpha = 1 - (game.movingTransitionCounter / 100);
-		else
-			ctx.globalAlpha = 1.0;
-		
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-		
-		ctx.fillStyle = "white";
-				
-    	ctx.fillRect(scaleX(newRect.left)+5, 
-				       scaleY(newRect.top + game.scoreRect.height())+5, 
-				       scaleX(newRect.width())-5, 
-				       scaleY(newRect.height())-5);
-    	
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-    	
-    	// Might be the first time the queen is on the board
-    	if(game.oldQueenPosition != null) {
-    		var oldRect = game.getSquareRect(game.oldQueenPosition.col, game.oldQueenPosition.row);
-
-    		// Draw the game piece at the old location
-    		var currentRect = game.getSquareRect(game.oldQueenPosition.col, game.oldQueenPosition.row);
-    		
-    		this.drawGamePiece(ctx, currentRect, game.newQueen.getQueenBoardIndicator(), game.newQueen.getQueenColor());
-			
-			ctx.fillStyle = "grey";
-			
-			ctx.globalAlpha = game.movingTransitionCounter / 100;
-			
-	    	ctx.fillRect(scaleX(oldRect.left)+5, 
-				       scaleY(oldRect.top + game.scoreRect.height())+5, 
-				       scaleX(oldRect.width())-5, 
-				       scaleY(oldRect.height())-5);
-			
-	
-			ctx.stroke();
-			ctx.closePath();
-			ctx.beginPath();
-	
-    	}
-    	
-    	ctx.globalAlpha = 1.0;
-	}
-}
-
 // Highlights the square which the mouse is currently hovering over
 GameRect.prototype.highlightMousedOverSquare = function(ctx){
 	// Highlight the current box the mouse is over
@@ -289,61 +210,62 @@ GameRect.prototype.highlightMousedOverSquare = function(ctx){
 	}
 }
 
-// Colors explored squares
-GameRect.prototype.showExplored = function(ctx) {
-	if(game.explored == null)
+GameRect.prototype.drawQueen = function(ctx, currentRect, currentSquare, queenID, attackCount) {
+	// Don't draw the queen if it is being moved
+	if(gameControls.selectedQueen != null && currentSquare.col == gameControls.selectedQueen.col && currentSquare.row == gameControls.selectedQueen.row )
 		return;
 	
-	for(let node of game.explored) {
-		var currentRect = game.getSquareRect(node.col, node.row);	
+	var size = Math.min(currentRect.width(), currentRect.height());
+	
+	var queenImage = this.greenQueenImage;
+	if(attackCount > 0)
+		queenImage = this.redQueenImage;
 		
-		this.shadeBox(ctx, currentRect, EXPLORED_COLOR);		
-	}
+	ctx.drawImage(queenImage, scaleX(currentRect.left + (currentRect.width() - size)/2), scaleY(currentRect.top +
+			game.scoreRect.height()), scaleX(size), scaleY(size));
+	
+	//this.printMessage(ctx, new Rect(currentRect.left, currentRect.top, currentRect.left + 20, currentRect.bottom) , queenID + 1, QUEEN_TEXT_COLOR, "left", 5);
+	//this.printMessage(ctx, new Rect(currentRect.right - 20, currentRect.top, currentRect.right, currentRect.bottom) , attackCount, QUEEN_ATTACK_TEXT_COLOR, "right", 5); 
 }
 
-//Colors squares on the frontier
-GameRect.prototype.showFrontier = function(ctx) {
-	if(game.frontier == null)
+GameRect.prototype.drawMovingQueen = function(ctx, currentRect) {
+	// Only draw the moving queen if it is selected
+	if(gameControls.selectedQueen == null)
 		return;
 	
-	for(let node of game.frontier) {
-		var currentRect = game.getSquareRect(node.nodeID.col, node.nodeID.row);	
+	// Get a square so we can have its size
+	var squareRect = game.getSquareRect(0, 0);
+	
+	
+	var size = Math.min(squareRect.width(), squareRect.height());
+	
+	ctx.drawImage(this.whiteQueenImage, gameControls.mouse.left - squareRect.width()/2, gameControls.mouse.top - squareRect.height()/2, scaleX(size), scaleY(size));
+}
+
+GameRect.prototype.displayGeneticDetails = function(ctx) {
+	
+	
+	ctx.fillStyle = "blue";
+	
+	ctx.textAlign = "left";
+	
+	ctx.font = scaleText(-5);
+	ctx.fillText("Potential Queen Layouts:", scaleX(625),scaleY(75));
+	
+	if(game.isGeneticPlayer()) {
+		for(var i = 0; i < NUMBER_OF_CANDIDATES; i++) {
+			if(game.geneticPlayer.candidateBoards[i].totalAttacks == 0)
+				ctx.fillStyle = "green";
+			else
+				ctx.fillStyle = "blue";
 			
-		this.shadeBox(ctx, currentRect, FRONTIER_COLOR);		
-	}
-}
-
-//Colors squares on the path
-GameRect.prototype.showShortestPath = function(ctx) {
-	if(game.path == null)
-		return;
-	
-	for(let node of game.path) {
-		var currentRect = game.getSquareRect(node.col, node.row);	
+			ctx.font = scaleText(-8);
+			ctx.fillText(i+1 + ": Total Attacks: " + game.geneticPlayer.candidateBoards[i].totalAttacks, scaleX(625),scaleY(100 + i * 2 *25));
+			ctx.font = scaleText(-10);
+			ctx.fillText("Queen Rows: " + game.geneticPlayer.queenPositionsToString(i), scaleX(640),scaleY(100 + (i * 2 + .75) *25));
 			
-		this.shadeBox(ctx, currentRect, PATH_COLOR);		
+		}	
 	}
-}
-
-GameRect.prototype.drawLegendItem = function(ctx, x, y, iconText, iconTextColor, iconBackgroundColor, legendText, legendColor) {
-	var currentRect = new Rect(x, y, x+25, y+30);
-	
-	this.shadeBox(ctx, currentRect, iconBackgroundColor);
-	
-	this.drawGamePiece(ctx, currentRect, iconText, iconTextColor, -5);
-	
-	currentRect.left += 40; 
-	
-	this.printMessage(ctx, currentRect, legendText, legendColor, "left", -1);	 
-}
-
-GameRect.prototype.drawLegend = function(ctx) {
-	this.drawLegendItem(ctx, 10, 610, "S", ICON_TEXT_COLOR, START_COLOR, "- Start", "black");
-	this.drawLegendItem(ctx, 170, 610, "D", ICON_TEXT_COLOR, DEST_COLOR, "- Destination", "black");
-	this.drawLegendItem(ctx, 340, 610, "", ICON_TEXT_COLOR, BLOCKED_COLOR, "- Blocked", "black");
-	this.drawLegendItem(ctx, 510, 610, "", ICON_TEXT_COLOR, PATH_COLOR, "- Path", "black");
-	this.drawLegendItem(ctx, 680, 610, "", ICON_TEXT_COLOR, EXPLORED_COLOR, "- Explored", "black");
-	this.drawLegendItem(ctx, 850, 610, "", ICON_TEXT_COLOR, FRONTIER_COLOR, "- Frontier", "black");
 }
 
 //Game area overrides basic GameObject draw
@@ -351,16 +273,12 @@ GameRect.prototype.draw = function(ctx) {
 	ctx.beginPath();
 	
 	ctx.lineWidth = "2";
-
-	this.showExplored(ctx);
-	
-	this.showFrontier(ctx);
-	
-	this.showShortestPath(ctx);
 	
 	this.drawGameBoard(ctx);
 	
-	this.drawLegend(ctx);
+	this.drawMovingQueen(ctx);
+	
+	this.displayGeneticDetails(ctx);
 		
 	this.highlightMousedOverSquare(ctx);
 };
@@ -376,19 +294,19 @@ function Game() {
 	this.scoreRect = new ScoreRect(0, 0, 1000, 50);
 	
 	this.board = new Board();
-
-	this.gameStateEnum = {
-			DEMO : "Demo",
-			PLAYING : "Playing",
-	};
+	
+	this.gamePlayerTypeEnum = {
+			HUMAN : "Human",
+			GENETIC : "Genetic"
+	}
+	
+	this.gamePlayer = this.gamePlayerTypeEnum.HUMAN;
 
 	this.gameRect = new GameRect(0, 75, 1000, 700);
 
-	this.gameState = this.gameStateEnum.DEMO;
-
-	this.squareWidth = (this.gameRect.width() - 20) / this.board.columns;
+	this.squareWidth = (this.gameRect.width() - 20) / this.board.size;
 	//game.squareWidth = 400 / game.columns;
-	this.squareHeight = (this.gameRect.height() - 20) / this.board.rows;
+	this.squareHeight = (this.gameRect.height() - 20) / this.board.size;
 	//game.squareHeight = 200 / game.rows;
 
 	this.xScale = this.physicalRect.right / this.gameRect.right;
@@ -401,8 +319,7 @@ function Game() {
     this.explored = null;
     this.frontier = null;
     this.path = null;
-    
-    this.slowSearch = false;
+   
 		
 	this.process = function(event){
 		  var data = event.data;
@@ -448,7 +365,7 @@ Game.prototype.getSquareRect = function(col, row) {
 // Returns the square based on the passed in coordinates. Must be scaled to the virtual size - position
 Game.prototype.getVirtualSquare = function(x, y) {
 	var square = new Point(Math.floor(x / game.squareWidth), Math.floor(y / game.squareHeight));
-	if(square.col < 0 || square.row < 0 || square.col >= game.board.columns || square.row >= game.board.rows)
+	if(square.col < 0 || square.row < 0 || square.col >= game.board.size || square.row >= game.board.size)
 		square = new Point(-1, -1);
 	return square;
 }
@@ -458,50 +375,12 @@ Game.prototype.getPhysicalSquare = function(x, y){
 	return game.getVirtualSquare(x / game.xScale, (y) / game.yScale - game.scoreRect.height());
 }
 
-// Handles an invalid move
-Game.prototype.invalidMoveSelected = function() {
-	$.growl({ title: "", message: "Invalid move!"});
-}
-
-// Toggles a blocked square 
-Game.prototype.toggleSquare = function(square) {
-	if(this.board.boardGrid[square.col][square.row].type == this.board.gameBoardEnum.EMPTY_SPACE) {
-		this.board.boardGrid[square.col][square.row].type = this.board.gameBoardEnum.USED_SPACE;
-		return;
-	}
-	
-	if(this.board.boardGrid[square.col][square.row].type == this.board.gameBoardEnum.USED_SPACE) {
-		this.board.boardGrid[square.col][square.row].type = this.board.gameBoardEnum.EMPTY_SPACE;
-		return;
-	}
-}
-
 // Resets the game board
 Game.prototype.resetBoard = function() {	
 	if(game.randomCost == true)
 		this.board.initilizeBoard(-1);
 	else
 		this.board.initilizeBoard(1);
-	
-	var positions = this.board.randomizeBoard();
-	
-	this.startLocation = positions.start;
-	this.destinationLocation = positions.destination;
-}
-
-// Starts a new game
-Game.prototype.newGame = function() {
-	this.resetBoard();
-	
-	this.gameState = game.gameStateEnum.PLAYING;
-
-
-	this.movementLoop();
-}
-
-// Starts moving the other player
-Game.prototype.movementLoop = function() {
-	// TODO
 }
 
 // Recalculates scaling of the virtual to physical mapping for the initial screen and when the screen is resized 
@@ -516,8 +395,9 @@ Game.prototype.recalcScaling = function(width, height) {
 	this.xScale = this.physicalRect.right / this.gameRect.right;
 	this.yScale = this.physicalRect.bottom / this.gameRect.bottom;
 	
-	this.squareWidth = (this.gameRect.width() - 20) / this.board.columns;
-	this.squareHeight = (this.gameRect.height() - 20) / this.board.rows;
+	var size = Math.min(this.gameRect.width(), this.gameRect.height())	
+	this.squareWidth = (size - 20) / this.board.size;
+	this.squareHeight = (size - 20) / this.board.size; 
 }
 
 // Checks to see if the screen size has changed enough to require rescaling
@@ -536,63 +416,44 @@ Game.prototype.checkScreenResize = function() {
 	}
 };
 
-// Transitions the game to a play state
-Game.prototype.switchToPlayState = function() {
-	this.gameState = this.gameStateEnum.PLAYING;
-};
-
-// Returns if the game is currently in demo mode
-Game.prototype.isDemo = function() {
-	return this.gameState == this.gameStateEnum.DEMO;
-};
-
-// Returns if the game is currently in playing mode
-Game.prototype.isPlaying = function() {
-	return this.gameState == this.gameStateEnum.PLAYING;
-};
 
 // Handles updates to animation components
 Game.prototype.animate = function() {
-	
-	// Note the actual drawing is handled as part of the GameRect.draw routine
-
+	if(this.isGeneticPlayer() && game.board.totalAttacks > 0) {
+		game.board.replaceQueenList(game.geneticPlayer.createNewGeneration());
+	}
 }
 
-// changes the board size based on the GUI sliders
+// changes the board size based on the GUI slider
 Game.prototype.updateBoardSize = function() {
-	var newColumns = document.getElementById("columns").value;
-	var newRows = document.getElementById("rows").value;
-	var blockDensity = document.getElementById("blockDensity").value;
+	var newSize = document.getElementById("size").value;
 	
-	if(newColumns < 10 || newColumns > 100 || newRows < 10 || newColumns > 100)
-		return;
-	
-	game.board.columns = newColumns;
-	game.board.rows = newRows;
-	game.board.blockDensity = blockDensity;
+	game.board.size = newSize;
 	
 	game.resetBoard();
 	
 	game.recalcScaling(game.physicalRect.width(), game.physicalRect.height());
 	
-	if(!game.isDemo())
-		game.newGame();
+	game.geneticPlayer = new Genetic(game.board.size);
 }
 
-Game.prototype.performSearch = function(type = game.currentSearch) {
-	
-	if(game.startLocation != null) {
-		this.path = null;		      	            		      
-	    this.explored = null;
-	    this.frontier = null;
-
-		game.messageGroupID++;   
-		game.worker.postMessage({'cmd' : 'search', 'type': type, 'slowSearch': game.slowSearch, 'ID': game.messageGroupID, 'board': game.board, 'start': game.startLocation, 'goal': game.destinationLocation});
-	
-	}
-	
+Game.prototype.isHumanPlayer = function() {
+	return this.gamePlayer == this.gamePlayerTypeEnum.HUMAN;
 }
 
+Game.prototype.isGeneticPlayer = function() {
+	return !this.isHumanPlayer();
+}
+
+Game.prototype.setHumanPlayer = function() {
+	game.gamePlayer = game.gamePlayerTypeEnum.HUMAN;
+}
+
+Game.prototype.setGeneticPlayer = function() {
+	game.gamePlayer = game.gamePlayerTypeEnum.GENETIC;
+	
+	game.geneticPlayer = new Genetic(game.board.size);
+}
 
 
 // The main game object instance
@@ -601,11 +462,7 @@ var game = new Game();
 /*******************************************/
 
 // The main animation loop
-function animate() {
-	if(game.isDemo()) {
-		; // No demo actions for this game
-	}
-		
+function animate() {	
 	game.animate();
 
 	screen.updateScreen();
@@ -622,24 +479,44 @@ function GameControls() {
 
 	this.mouse = new Rect(-1,-1,-1,-1);
 	this.mouse.mouseClick = false;
-	this.currentSquare = null;
+	this.selectedQueen = null;
 
 	// Displays debugging information on the screen
 	this.debug = false;	
 }
 
-GameControls.prototype.checkToToggleSquares = function() {
-	var newSquare = game.getPhysicalSquare(gameControls.mouse.left, gameControls.mouse.top);
+GameControls.prototype.selectQueen = function() {
+	var currentSquare = game.getPhysicalSquare(gameControls.mouse.left, gameControls.mouse.top);
+	
+	if(currentSquare.col != -1 && game.isHumanPlayer()) 
+		if(game.board.boardGrid[currentSquare.col][currentSquare.row] != game.board.gameBoardEnum.EMPTY_SPACE ) 
+			this.selectedQueen = currentSquare;
+	else
+		this.selectedQueen = null;
+	
+}
+
+GameControls.prototype.moveQueen = function() {
+	; // don't need to do anything
+}
+
+GameControls.prototype.placeQueen = function() {
+	var currentSquare = game.getPhysicalSquare(gameControls.mouse.left, gameControls.mouse.top);
+	
+	// Make sure we are on the game board, a queen has been selected and it is not being placed where another queen is
+	if(currentSquare.col != -1 && this.selectedQueen != null && game.board.boardGrid[currentSquare.col][currentSquare.row] == game.board.gameBoardEnum.EMPTY_SPACE) {
+		var currentQueenID = game.board.boardGrid[this.selectedQueen.col][this.selectedQueen.row];
+		game.board.boardGrid[this.selectedQueen.col][this.selectedQueen.row] = game.board.gameBoardEnum.EMPTY_SPACE
+		game.board.boardGrid[currentSquare.col][currentSquare.row] = currentQueenID
+		game.board.queenList[currentQueenID].position = currentSquare;
 		
-	// Only toggle if the user moved to a new square
-	if(gameControls.currentSquare == null || newSquare.col != gameControls.currentSquare.col || newSquare.row != gameControls.currentSquare.row) {
-		gameControls.currentSquare = newSquare;
+		game.board.setQueenAttackCounts();
 		
-		if(newSquare.col == -1)
-			return;
-		
-		game.toggleSquare(gameControls.currentSquare);
-	}	
+		this.selectedQueen = null;
+	}
+	else
+		this.selectedQueen = null;
+	
 }
 
 var gameControls = new GameControls();
@@ -680,7 +557,6 @@ screen.updateScreen = function(ctx) {
 				
 		ctx.textAlign = "left";
 		ctx.fillText("gameRect: " + game.gameRect.left + " " + game.gameRect.top + " " + game.gameRect.right + " " + game.gameRect.bottom, 50 ,250);
-		ctx.fillText("gameState: " + game.gameState, 50 ,300);
 		if(gameControls.currentSquare != null)
 			ctx.fillText("gameControls.currentSquare: (" + gameControls.currentSquare.col + ", " + gameControls.currentSquare + ")", 50 ,350);
 		else
@@ -704,12 +580,14 @@ screen.updateScreen = function(ctx) {
 // Loaded on application start
 function onLoad() {
 	
-	onclickBreadthFirstSearch();
+	onclickHumanPlayer();
 	
 	var canvas = document.getElementById("searchCanvas");
 	
 	// Hide scroll bars
 	document.body.style.overflow = "hidden";
+	
+	onclickSize();
 	
 	game.updateBoardSize();
 	
@@ -717,14 +595,8 @@ function onLoad() {
 
 	animate();  
 	
-	game.performSearch('bfs');
-	
 	// Listen for keyboard down events
     canvas.addEventListener('keydown', function(e) {
-		// Start the Game if we were in demo mode
-    	if(game.isDemo())
-			game.switchToPlayState();
-
 		// Store the key press
     	gameControls.keyPressed[e.keyCode] = true;
 
@@ -756,7 +628,7 @@ function onLoad() {
 	    	gameControls.mouse.right = e.changedTouches[0].pageX - canvas.left;
 	    	gameControls.mouse.bottom = e.changedTouches[0].pageY - canvas.top;
 	    	
-	    	gameControls.checkToToggleSquares();
+	    	gameControls.selectQueen();
 		}
     }, false);
  	
@@ -774,7 +646,7 @@ function onLoad() {
 	    	gameControls.mouse.right = e.changedTouches[0].pageX - canvas.left;
 	    	gameControls.mouse.bottom = e.changedTouches[0].pageY - canvas.top;
 			
-			gameControls.checkToToggleSquares();
+			gameControls.moveQueen();
 		}
 	
     }, false);
@@ -790,6 +662,8 @@ function onLoad() {
 		gameControls.mouse.top = e.changedTouches[0].pageY - canvas.top;
     	gameControls.mouse.right = e.changedTouches[0].pageX - canvas.left;
     	gameControls.mouse.bottom = e.changedTouches[0].pageY - canvas.top;
+    	
+    	gameControls.placeQueen();
     	
     }, false);  
 
@@ -808,7 +682,7 @@ function onLoad() {
     	
 		gameControls.mouse.mouseClick = true;
 				
-		gameControls.checkToToggleSquares();
+		gameControls.selectQueen();
 		
     }, false);
     
@@ -827,7 +701,7 @@ function onLoad() {
 	
 		// Only change when the mouse is clicked
 		if(gameControls.mouse.mouseClick) {
-			gameControls.checkToToggleSquares();
+			gameControls.moveQueen();
 		}			
 				   	
     }, false);
@@ -846,7 +720,7 @@ function onLoad() {
     	gameControls.mouse.right = e.clientX - canvas.left;
     	gameControls.mouse.bottom = e.clientY - canvas.top;
  	
-    	gameControls.currentSquare = null;
+    	gameControls.placeQueen();
     	
     }, false); 
 }
@@ -854,55 +728,22 @@ function onLoad() {
 /*******************************************/
 
 // Called when a user clicks on the player type selection buttons
-function onclickBreadthFirstSearch(element) {
-	document.getElementById("breadthFirstSearch").checked = true;
-	document.getElementById("depthFirstSearch").checked = false;
-	document.getElementById("uniformCostSearch").checked = false;
-	document.getElementById("aStarSearch").checked = false;
+function onclickHumanPlayer(element) {
+	document.getElementById("humanPlayer").checked = true;
+	document.getElementById("geneticPlayer").checked = false;
 	
-	game.currentSearch = 'bfs';
-	game.performSearch();
+	game.setHumanPlayer();
 }
 
-function onclickDepthFirstSearch(element) {
-	document.getElementById("breadthFirstSearch").checked = false;
-	document.getElementById("depthFirstSearch").checked = true;
-	document.getElementById("uniformCostSearch").checked = false;
-	document.getElementById("aStarSearch").checked = false;
-
-	game.currentSearch = 'dfs';
-	game.performSearch();
+function onclickGeneticPlayer(element) {
+	document.getElementById("humanPlayer").checked = false;
+	document.getElementById("geneticPlayer").checked = true;
+	
+	game.setGeneticPlayer();
 }
 
-function onclickUniformCostSearch(element) {
-	document.getElementById("breadthFirstSearch").checked = false;
-	document.getElementById("depthFirstSearch").checked = false;
-	document.getElementById("uniformCostSearch").checked = true;
-	document.getElementById("aStarSearch").checked = false;
-
-	game.currentSearch = 'ucs';
-	game.performSearch();
-}
-
-function onclickAStarSearch(element) {
-	document.getElementById("breadthFirstSearch").checked = false;
-	document.getElementById("depthFirstSearch").checked = false;
-	document.getElementById("uniformCostSearch").checked = false;
-	document.getElementById("aStarSearch").checked = true;
-
-	game.currentSearch = 'astar';
-	game.performSearch();
-}
-
-function onclickRandomCost(element) {
-	game.randomCost = element.checked;
+function onclickSize(element) {
+	document.getElementById("sizeLabel").innerText = "Size (" + document.getElementById("size").value + ")";
 	
 	game.updateBoardSize();
-	game.performSearch();
-}
-
-function onclickSlowSearch(element) {
-	game.slowSearch = element.checked;
-	
-	game.performSearch();
 }

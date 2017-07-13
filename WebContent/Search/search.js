@@ -7,7 +7,8 @@
 /*******************************************/
 
 // Time to sleep in ms between each iteration loop
-var SLEEP_TIME = 0;
+var SLEEP_TIME = 100;
+var MAIN_THREAD_UPDATE_THROTTLE = 5;
 
 
 function Search() {
@@ -31,29 +32,38 @@ self.addEventListener('message', function(event) {
 	    		  data.start.col + ", " + data.start.row + ") goal: (" + data.goal.col + ", " + data.goal.row + ")");
 	    	     
 	      var results = [];
+	      // Restore to objects
+	  	  var start = new Point(data.start.col, data.start.row);
+		  var goal = new Point(data.goal.col, data.goal.row);
+		  
+		  var searchDelay = 0;
+
+		  // If the user clicked for a slow search add a delay
+		  if(data.slowSearch)
+			  searchDelay = SLEEP_TIME;
 	      
 	      switch(data.type) {
 	      case 'bfs':
 	      		var search = new BreadthFirstSearch();
-	      		results = search.performSearch(data.ID, data.board, data.start, data.goal);
+	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
 	      		break;
 	      case 'dfs':
 	      		var search = new DepthFirstSearch();
-	      		results = search.performSearch(data.ID, data.board, data.start, data.goal);
+	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
 	      		break;	      			      		      
 	      case 'ucs':
 	      		var search = new UniformCostSearch();
-	      		results = search.performSearch(data.ID, data.board, data.start, data.goal);
+	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
 	      		break;	      			      		
 	      case 'astar':
 	      		var search = new AStarSearch();
-	      		results = search.performSearch(data.ID, data.board, data.start, data.goal);
+	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
 	      		break;	      	
 	      default:
 	      		console.log('Unknown type:' + data.type)
 	      }
 	      
-	      self.postMessage({'cmd' : 'path', 'ID': data.ID, 'path': results.path, 'distance': results.distance});
+	      self.postMessage({'cmd' : 'path', 'ID': data.ID, 'path': results.path, 'distance': results.distance, 'searchCounter': results.searchCounter});
 	      	      
 	      break;
 	    case 'stop':
@@ -74,7 +84,7 @@ Search.prototype.isIn = function(elem, list) {
 	return false;
 }
 
-Search.prototype.performSearch = function(messageID, board, start, goal) {
+Search.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
 	; // Abstract function
 }
 
@@ -87,13 +97,12 @@ function BreadthFirstSearch() {
 BreadthFirstSearch.prototype = Object.create(Search.prototype);
 BreadthFirstSearch.prototype.contructor = BreadthFirstSearch;
 
-BreadthFirstSearch.prototype.performSearch = function(messageID, board, start, goal) {
-	start = new Point(start.col, start.row);
-	goal = new Point(goal.col, goal.row);
+BreadthFirstSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
+	var searchCounter = 0;
 	
 	// If the start and end are the same then return an empty list
 	if(start == goal)
-		return {'path': [], 'distance': 0};
+		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 	
 	var explored = [];
 	var frontier = new Array();
@@ -106,14 +115,14 @@ BreadthFirstSearch.prototype.performSearch = function(messageID, board, start, g
 	
 	// Loop until we have explored all frontiers. If this completes we couldn't find a path
 	while(frontier.length > 0) {
+		searchCounter++;
 		current = frontier.pop();
 		
-		// Optimization
 		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
 			path = current.path.slice(0);
 			path.push(current.nodeID);
 			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			return {'path': path, 'distance': current.distance};
+			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
 		}
 		
 		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
@@ -125,7 +134,7 @@ BreadthFirstSearch.prototype.performSearch = function(messageID, board, start, g
 				path.push(current.nodeID);
 				path.push(node);
 				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-				return {'path': path, 'distance': current.distance + + board.boardGrid[node.col][node.row].weight};
+				return {'path': path, 'distance': current.distance + + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
 			}
 			
 			if(!(this.isIn(node, explored))) {
@@ -136,18 +145,11 @@ BreadthFirstSearch.prototype.performSearch = function(messageID, board, start, g
 			}			
 		}
 				
-		// Need to not overwhelm the main GUI thread
-		if(counter++ == 5) {
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			counter = 0;
-		}
-		
-		// Want to show the progress
-		sleep(SLEEP_TIME);
+		iterationMaintenance(messageID, searchDelay, counter, explored, frontier);
 
 	}
 	
-	return {'path': [], 'distance': 0};
+	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 }
 
 /*******************************************/
@@ -159,13 +161,12 @@ function DepthFirstSearch() {
 DepthFirstSearch.prototype = Object.create(Search.prototype);
 DepthFirstSearch.prototype.contructor = BreadthFirstSearch;
 
-DepthFirstSearch.prototype.performSearch = function(messageID, board, start, goal) {
-	start = new Point(start.col, start.row);
-	goal = new Point(goal.col, goal.row);
+DepthFirstSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
+	var searchCounter = 0;
 	
 	// If the start and end are the same then return an empty list
 	if(start == goal)
-		return {'path': [], 'distance': 0};
+		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 	
 	var explored = [];
 	var frontier = new Array();
@@ -178,6 +179,7 @@ DepthFirstSearch.prototype.performSearch = function(messageID, board, start, goa
 	
 	// Loop until we have explored all frontiers. If this completes we couldn't find a path
 	while(frontier.length > 0) {
+		searchCounter++;		
 		current = frontier.pop();
 
 		// Are we at the goal?
@@ -185,7 +187,7 @@ DepthFirstSearch.prototype.performSearch = function(messageID, board, start, goa
 			path = current.path;
 			path.push(goal)
 			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			return {'path': path, 'distance': current.distance};
+			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
 		}
 		
 		if(!(this.isIn(current.nodeID, explored))) {
@@ -195,22 +197,14 @@ DepthFirstSearch.prototype.performSearch = function(messageID, board, start, goa
 			for(let node of theBoard.getNeighbors(current.nodeID, board)) {							
 					path = current.path.slice(0); 
 					path.push(current.nodeID);
-					frontier.push({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
+					frontier.push({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path, 'searchCounter': searchCounter})
 				}			
 		}
 				
-		// Need to not overwhelm the main GUI thread
-		if(counter++ == 5) {
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			counter = 0;
-		}
-		
-		// Want to show the progress
-		sleep(SLEEP_TIME);
-
+		iterationMaintenance(messageID, searchDelay, counter, explored, frontier);
 	}
 	
-	return {'path': [], 'distance': 0};
+	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 }
 
 /*******************************************/
@@ -222,13 +216,12 @@ function UniformCostSearch() {
 UniformCostSearch.prototype = Object.create(Search.prototype);
 UniformCostSearch.prototype.contructor = UniformCostSearch;
 
-UniformCostSearch.prototype.performSearch = function(messageID, board, start, goal) {
-	start = new Point(start.col, start.row);
-	goal = new Point(goal.col, goal.row);
+UniformCostSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
+	var searchCounter = 0;
 	
 	// If the start and end are the same then return an empty list
 	if(start == goal)
-		return {'path': [], 'distance': 0};
+		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 	
 	var explored = [];
 	var frontier = new FastPriorityQueue(function(a,b) {return a.distance < b.distance});
@@ -241,13 +234,14 @@ UniformCostSearch.prototype.performSearch = function(messageID, board, start, go
 	
 	// Loop until we have explored all frontiers. If this completes we couldn't find a path
 	while(frontier.size > 0) {
+		searchCounter++;
 		current = frontier.poll();
 		
 		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
 			path = current.path.slice(0);
 			path.push(current.nodeID);
 			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			return {'path': path, 'distance': current.distance};
+			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
 		}
 				
 		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
@@ -259,7 +253,7 @@ UniformCostSearch.prototype.performSearch = function(messageID, board, start, go
 				path.push(current.nodeID);
 				path.push(node);
 				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight};
+				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
 			}
 			
 			if(!(this.isIn(node, explored))) {
@@ -269,22 +263,14 @@ UniformCostSearch.prototype.performSearch = function(messageID, board, start, go
 				frontier.add({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
 			}			
 		}
-		
-		// Clean up as we are going to pull directly from the array
-		frontier.trim();
-		
-		// Need to not overwhelm the main GUI thread
-		if(counter++ == 5) {
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			counter = 0;
-		}
-		
-		// Want to show the progress
-		sleep(SLEEP_TIME);
 
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
+		frontier.trim();
+
+		iterationMaintenance(messageID, searchDelay, counter, explored, frontier.array);
 	}
 	
-	return {'path': [], 'distance': 0};
+	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 }
 
 /*******************************************/
@@ -301,13 +287,12 @@ AStarSearch.prototype.euclideanDistance = function(a, b) {
 	return Math.sqrt(Math.pow(a.col - b.col, 2) + Math.pow(a.row - b.row, 2));
 }
 
-AStarSearch.prototype.performSearch = function(messageID, board, start, goal) {
-	start = new Point(start.col, start.row);
-	goal = new Point(goal.col, goal.row);
+AStarSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
+	var searchCounter = 0;
 	
 	// If the start and end are the same then return an empty list
 	if(start == goal)
-		return {'path': [], 'distance': 0};
+		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
 	
 	var explored = [];
 	var frontier = new FastPriorityQueue(function(a,b) {
@@ -321,13 +306,14 @@ AStarSearch.prototype.performSearch = function(messageID, board, start, goal) {
 	
 	// Loop until we have explored all frontiers. If this completes we couldn't find a path
 	while(frontier.size > 0) {
+		searchCounter++;
 		current = frontier.poll();
 
 		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
 			path = current.path.slice(0);
 			path.push(current.nodeID);
 			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			return {'path': path, 'distance': current.distance};
+			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
 		}
 		
 		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
@@ -338,7 +324,7 @@ AStarSearch.prototype.performSearch = function(messageID, board, start, goal) {
 				path.push(current.nodeID);
 				path.push(node);
 				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight};
+				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
 			}
 			
 			if(!(this.isIn(node, explored))) {
@@ -350,27 +336,33 @@ AStarSearch.prototype.performSearch = function(messageID, board, start, goal) {
 			}			
 		}
 		
-
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
 		frontier.trim();
-		
-		if(counter == 5) {
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			counter = 0;
-		}
-		else
-			counter++;
-		
-		// Want to show the progress
-		sleep(SLEEP_TIME);
-				
+
+		iterationMaintenance(messageID, searchDelay, counter, explored, frontier.array);				
 	}
 	
-	return {'path': [], 'distance': 0};
+	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
+}
+
+// Sends an update to the main thread and adds a delay if the user asked for it
+function iterationMaintenance(messageID, searchDelay, counter, explored, frontier) {	
+	// If there is a search delay always send an update to the main thread. If there is no search delay then skip messages to not overwhelm the main thread 
+	if(counter == 5 || searchDelay > 0) {
+		self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
+		counter = 0;
+	}
+	else
+		counter++;
+	
+	// Want to show the progress
+	sleep(searchDelay);
 }
 
 // Should not normally do this, but blocking in a worker thread. Silly that Javascript does not yet have a commonly available way to sleep without blocking.
+// Since this is a worker thread, the UI isn't blocked, but it does take all the capacity of a single core
 function sleep(time) {
 	var now = new Date().getTime();
 	while(new Date().getTime() < now + time) 
-	 ;
+	 ; // Do nothing
 }

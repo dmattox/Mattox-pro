@@ -32,6 +32,7 @@ function basicTopology() {
     });
 
     cy.reset();
+    cy.fit();
 }
 
 function complexTopology() {
@@ -68,6 +69,7 @@ function complexTopology() {
     });
 
     cy.reset();
+    cy.fit();
 }
 
 function ringTopology() {
@@ -134,6 +136,7 @@ function ringTopology() {
     });
 
     cy.reset();
+    cy.fit();
 }
 
 function butterflyTopology() {
@@ -183,6 +186,10 @@ function butterflyTopology() {
     theNetwork.addLink(5, 10);
     theNetwork.addLink(10, 18);
     theNetwork.addLink(18,3);
+    
+    cy.reset();
+    cy.fit();
+
 }
 
 
@@ -408,5 +415,6 @@ function mazeTopology() {
         name: 'preset'
     });
 
+    cy.reset();
     cy.fit();
 }
