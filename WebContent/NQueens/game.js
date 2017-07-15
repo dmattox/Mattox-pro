@@ -20,12 +20,13 @@ ScoreRect.prototype.draw = function(ctx) {
 	ctx.closePath();
 	ctx.beginPath();
 	
-	ctx.font = scaleText(-5);
+	ctx.font = scaleText(10);
 	
 	ctx.strokeStyle = "black";
 	ctx.fillStyle = "black";
 	
 	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
 
 	var printString;
 	
@@ -37,7 +38,7 @@ ScoreRect.prototype.draw = function(ctx) {
 	if(game.gamePlayer == game.gamePlayerTypeEnum.GENETIC)
 		printString += " Generation:" + game.geneticPlayer.generation
 	
-	ctx.fillText(printString ,scaleX(this.width()/2),scaleY(25));
+	ctx.fillText(printString ,scaleX(this.width()/2),scaleY(this.height()/2));
 	
 	ctx.stroke();
 	ctx.closePath();
@@ -239,20 +240,18 @@ GameRect.prototype.drawMovingQueen = function(ctx, currentRect) {
 	
 	var size = Math.min(squareRect.width(), squareRect.height());
 	
-	ctx.drawImage(this.whiteQueenImage, gameControls.mouse.left - squareRect.width()/2, gameControls.mouse.top - squareRect.height()/2, scaleX(size), scaleY(size));
+	ctx.drawImage(this.whiteQueenImage, gameControls.mouse.left - scaleX(squareRect.width()/2), scaleY(gameControls.mouse.top - squareRect.height()/2), scaleX(size), scaleY(size));
 }
 
 GameRect.prototype.displayGeneticDetails = function(ctx) {
-	
-	
-	ctx.fillStyle = "blue";
-	
-	ctx.textAlign = "left";
-	
-	ctx.font = scaleText(-5);
-	ctx.fillText("Potential Queen Layouts:", scaleX(625),scaleY(75));
-	
 	if(game.isGeneticPlayer()) {
+		ctx.fillStyle = "blue";
+		
+		ctx.textAlign = "left";
+		
+		ctx.font = scaleText(-5);
+		ctx.fillText("Potential Queen Layouts:", scaleX(625),scaleY(75));
+		
 		for(var i = 0; i < NUMBER_OF_CANDIDATES; i++) {
 			if(game.geneticPlayer.candidateBoards[i].totalAttacks == 0)
 				ctx.fillStyle = "green";
@@ -447,6 +446,8 @@ Game.prototype.isGeneticPlayer = function() {
 
 Game.prototype.setHumanPlayer = function() {
 	game.gamePlayer = game.gamePlayerTypeEnum.HUMAN;
+	
+	game.resetBoard();
 }
 
 Game.prototype.setGeneticPlayer = function() {
@@ -732,12 +733,16 @@ function onclickHumanPlayer(element) {
 	document.getElementById("humanPlayer").checked = true;
 	document.getElementById("geneticPlayer").checked = false;
 	
+	document.getElementById("instructions").style.display = 'block';
+	
 	game.setHumanPlayer();
 }
 
 function onclickGeneticPlayer(element) {
 	document.getElementById("humanPlayer").checked = false;
 	document.getElementById("geneticPlayer").checked = true;
+	
+	document.getElementById("instructions").style.display = 'none';
 	
 	game.setGeneticPlayer();
 }

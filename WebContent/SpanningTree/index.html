@@ -48,7 +48,7 @@
 
 </head>
 
-<body onload="onLoad()">
+<body onload="onLoad()" onresize="onResize()">
 	<a style="display:block" href="http://www.mattox.pro">
 		<div class="banner">	
 			<div class="banner_title">David Mattox</div> 
@@ -72,8 +72,8 @@
 	        <div class="panel_border">
 	            <div class="flip">Control Simulation</div>
 	            <div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
-	                <input class="button" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause Simulation"></input>
-	                <button class="button" onclick="onclickRestartSim()" type="button">Restart Simulation</button>
+	                <input class="button" onclick="onclickPauseResumeSim(this)" type="button" id="pauseResumeButton" value="Pause"></input>
+	                <button class="button" onclick="onclickRestartSim()" type="button">Restart</button>
 	                <div class="label_text" style="text-align: center;color: black; font-size:1.2vw; margin: 5px;"><input type="checkbox" id="serializeCheckbox" onchange="onchangeSerialize(this)"></input>Serialize Messages</div>
 	            </div>                       
 	        </div>
@@ -457,6 +457,36 @@
         
         function onchangeSerialize(elem) {
         	theNetwork.serializeMessages = elem.checked;
+        }
+        
+        function onResize() {
+        	// The main cy div
+        	var cydiv = document.getElementById("cy");
+        	
+        	var parentSize = cydiv.parentNode.getBoundingClientRect();
+        	
+        	var width = parentSize.width - parentSize.left;
+        	var height = parentSize.height - parentSize.top;
+        	
+        	cydiv.style.width = width;
+        	cydiv.style.height = height;
+        	
+            cy.reset();
+            cy.fit();
+            
+            // The legend cy div
+        	cydiv = document.getElementById("cy_legend");
+        	
+        	var parentSize = cydiv.parentNode.getBoundingClientRect();
+        	
+        	var width = parentSize.width - parentSize.left;
+        	var height = parentSize.height - parentSize.top;
+        	
+        	cydiv.style.width = width;
+        	cydiv.style.height = height;
+        	
+        	cy_legend.reset();
+        	cy_legend.fit();
         }
     </script>
 

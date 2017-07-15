@@ -22,8 +22,8 @@ ScoreRect.prototype.draw = function(ctx) {
 		ctx.fillStyle = "black";
 		ctx.textAlign = "center";
 		
-		if(game.pathLength > 0) {
-			ctx.fillText("Path Length: " + game.pathLength + "    Distance: " + game.distance + "    Nodes Explored: " + game.searchCounter,scaleX(this.width()/2),scaleY(25));			
+		if(game.searchCounter > 0) {
+			ctx.fillText("Path Length: " + game.pathLength + "    Distance: " + game.distance + "    Nodes Explored: " + game.searchCounter, scaleX(this.width()/2),scaleY(25));			
 		}
 		else
 		{					
@@ -198,87 +198,6 @@ GameRect.prototype.displayMainMessage = function(ctx, message) {
 
 }
 
-// Handles the transition animation when a piece loses
-GameRect.prototype.animateEndState = function(ctx) {
-	if(game.isEndState()) {
-		
-		var currentRect = game.getSquareRect(game.losingPlayer.getQueenLocation().col, game.losingPlayer.getQueenLocation().row);
-
-		if(game.endingGameCounter <= 100) 
-			ctx.globalAlpha = game.endingGameCounter / 100;
-		else
-			ctx.globalAlpha = 1.0;
-
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-		
-		ctx.fillStyle = "red";
-				
-    	ctx.fillRect(scaleX(currentRect.left)+5, 
-				       scaleY(currentRect.top + game.scoreRect.height())+5, 
-				       scaleX(currentRect.width())-5, 
-				       scaleY(currentRect.height())-5);
-
-    	this.displayMainMessage(ctx, game.winningPlayer.getPlayerTitle() + " won!");
-			
-	}
-}
-
-GameRect.prototype.animateMovingTransition = function(ctx) {
-	if(game.isMovingTransitionState()) {
-		
-		var newRect = game.getSquareRect(game.newQueen.getQueenLocation().col, game.newQueen.getQueenLocation().row);
-	
-		if(game.movingTransitionCounter <= 100) 
-			ctx.globalAlpha = 1 - (game.movingTransitionCounter / 100);
-		else
-			ctx.globalAlpha = 1.0;
-		
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-		
-		ctx.fillStyle = "white";
-				
-    	ctx.fillRect(scaleX(newRect.left)+5, 
-				       scaleY(newRect.top + game.scoreRect.height())+5, 
-				       scaleX(newRect.width())-5, 
-				       scaleY(newRect.height())-5);
-    	
-		ctx.stroke();
-		ctx.closePath();
-		ctx.beginPath();
-    	
-    	// Might be the first time the queen is on the board
-    	if(game.oldQueenPosition != null) {
-    		var oldRect = game.getSquareRect(game.oldQueenPosition.col, game.oldQueenPosition.row);
-
-    		// Draw the game piece at the old location
-    		var currentRect = game.getSquareRect(game.oldQueenPosition.col, game.oldQueenPosition.row);
-    		
-    		this.drawGamePiece(ctx, currentRect, game.newQueen.getQueenBoardIndicator(), game.newQueen.getQueenColor());
-			
-			ctx.fillStyle = "grey";
-			
-			ctx.globalAlpha = game.movingTransitionCounter / 100;
-			
-	    	ctx.fillRect(scaleX(oldRect.left)+5, 
-				       scaleY(oldRect.top + game.scoreRect.height())+5, 
-				       scaleX(oldRect.width())-5, 
-				       scaleY(oldRect.height())-5);
-			
-	
-			ctx.stroke();
-			ctx.closePath();
-			ctx.beginPath();
-	
-    	}
-    	
-    	ctx.globalAlpha = 1.0;
-	}
-}
-
 // Highlights the square which the mouse is currently hovering over
 GameRect.prototype.highlightMousedOverSquare = function(ctx){
 	// Highlight the current box the mouse is over
@@ -393,18 +312,17 @@ function Game() {
 
 	this.xScale = this.physicalRect.right / this.gameRect.right;
 	this.yScale = this.physicalRect.bottom / this.gameRect.bottom;
-	
-    this.worker = new Worker('search.js');
-    
-    this.messageGroupID = 0;
-    
+        
     this.explored = null;
     this.frontier = null;
     this.path = null;
     
     this.slowSearch = false;
+    
+    this.searchCompleted = true;
 		
-	this.process = function(event){
+    // Javascript doesn't allow worker threads to sleep, so moving away from this approach to better display what the algorithms are doing
+/*	this.process = function(event){
 		  var data = event.data;
 		  switch (data.cmd) {
 		    case 'path':
@@ -437,7 +355,7 @@ function Game() {
 	}
 	
 	//Add a listener to receive moves from the worker thread
-	this.worker.addEventListener('message', this.process.bind(this), false);
+	this.worker.addEventListener('message', this.process.bind(this), false);*/
 };
 
 // Returns the virtual deminsions for a given square based on the column and row provided
@@ -553,8 +471,24 @@ Game.prototype.isPlaying = function() {
 
 // Handles updates to animation components
 Game.prototype.animate = function() {
-	
-	// Note the actual drawing is handled as part of the GameRect.draw routine
+	if(!this.searchCompleted) {
+		// Note the actual drawing is handled as part of the GameRect.draw routine
+		//return {'completed': this.searchComplete, 'path': path, 'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+	    var result = game.search.continueSearch();
+
+	    this.processResults(result);	    
+	}
+}
+
+Game.prototype.processResults = function(result) {
+    this.searchCompleted = result.completed;
+	this.explored = result.explored;
+	this.frontier = result.frontier;	
+	this.path = result.path;
+	this.distance = result.distance;
+	this.searchCounter = result.searchCounter;
+	if(result.path != null)
+		this.pathLength = result.path.length;
 
 }
 
@@ -582,15 +516,30 @@ Game.prototype.updateBoardSize = function() {
 Game.prototype.performSearch = function(type = game.currentSearch) {
 	
 	if(game.startLocation != null) {
+		this.searchCompleted = false;
 		this.path = null;		      	            		      
 	    this.explored = null;
 	    this.frontier = null;
-
-		game.messageGroupID++;   
-		game.worker.postMessage({'cmd' : 'search', 'type': type, 'slowSearch': game.slowSearch, 'ID': game.messageGroupID, 'board': game.board, 'start': game.startLocation, 'goal': game.destinationLocation});
+	    
+	    switch(game.currentSearch) {
+	    case 'bfs':
+	    	game.search = new BreadthFirstSearch();
+	    	break;
+	    case 'dfs':
+	    	game.search = new DepthFirstSearch();
+	    	break;	 
+	    case 'ucs':
+	    	game.search = new UniformCostSearch();
+	    	break;	 
+		case 'astar':
+			game.search = new AStarSearch();
+			break;	 
+		}
 	
-	}
-	
+	    var result = game.search.performSearch(game.board, game.startLocation, game.destinationLocation);
+	    
+	    this.processResults(result);	    
+	}	
 }
 
 

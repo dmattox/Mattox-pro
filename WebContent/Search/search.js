@@ -14,66 +14,13 @@ var MAIN_THREAD_UPDATE_THROTTLE = 5;
 function Search() {
 	this.explored = [];
 	this.frontier = new FastPriorityQueue();
+	
+	// We perform one iteration of the loop at a time to better show how the algorithms work.
+	var searchComplete = false;
 } 
 
-var theBoard = null;
+var theBoard = new Board();
 
-self.addEventListener('message', function(event) {
-	  importScripts("../common_javascript/FastPriorityQueue.js");
-	  importScripts("utility.js");
-	  importScripts("board.js");
-	  
-	  theBoard = new Board();
-	  
-	  var data = event.data;
-	  switch (data.cmd) {
-	    case 'search':      	     
-	      console.log('Worker Message Received - ID:' + data.ID + " type:" + data.type + " board: (" + data.board.columns + ", " + data.board.rows + ") start: (" + 
-	    		  data.start.col + ", " + data.start.row + ") goal: (" + data.goal.col + ", " + data.goal.row + ")");
-	    	     
-	      var results = [];
-	      // Restore to objects
-	  	  var start = new Point(data.start.col, data.start.row);
-		  var goal = new Point(data.goal.col, data.goal.row);
-		  
-		  var searchDelay = 0;
-
-		  // If the user clicked for a slow search add a delay
-		  if(data.slowSearch)
-			  searchDelay = SLEEP_TIME;
-	      
-	      switch(data.type) {
-	      case 'bfs':
-	      		var search = new BreadthFirstSearch();
-	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
-	      		break;
-	      case 'dfs':
-	      		var search = new DepthFirstSearch();
-	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
-	      		break;	      			      		      
-	      case 'ucs':
-	      		var search = new UniformCostSearch();
-	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
-	      		break;	      			      		
-	      case 'astar':
-	      		var search = new AStarSearch();
-	      		results = search.performSearch(data.ID, searchDelay, data.board, start, goal);
-	      		break;	      	
-	      default:
-	      		console.log('Unknown type:' + data.type)
-	      }
-	      
-	      self.postMessage({'cmd' : 'path', 'ID': data.ID, 'path': results.path, 'distance': results.distance, 'searchCounter': results.searchCounter});
-	      	      
-	      break;
-	    case 'stop':
-	      console.log('Worker Message Received - stop: ');
-	      self.close(); // Terminates the worker.
-	      break;
-	    default:
-	      console.log('Worker Message Received -  unknown command: ' + data.msg);
-	  };
-	}, false);
 
 Search.prototype.isIn = function(elem, list) {
 	for(let currentElem of list) {
@@ -84,9 +31,19 @@ Search.prototype.isIn = function(elem, list) {
 	return false;
 }
 
-Search.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
+// Starts the search and does a single iteration
+Search.prototype.performSearch = function(board, start, goal) {
 	; // Abstract function
 }
+
+// Continues the search for the next iteration
+Search.prototype.continueSearch = function() {
+	; // Abstract function
+}
+
+Search.prototype.isSearchComplete = function() {
+	return this.searchComplete;
+} 
 
 /*******************************************/
 
@@ -97,59 +54,70 @@ function BreadthFirstSearch() {
 BreadthFirstSearch.prototype = Object.create(Search.prototype);
 BreadthFirstSearch.prototype.contructor = BreadthFirstSearch;
 
-BreadthFirstSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
-	var searchCounter = 0;
+BreadthFirstSearch.prototype.performSearch = function(board, start, goal) {	
+	this.searchCounter = 0;
+	
+	this.board = board;
+	this.start = start;
+	this.goal = goal;
+	
+	this.explored = [];
+	this.frontier = new Array();
 	
 	// If the start and end are the same then return an empty list
-	if(start == goal)
-		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
-	
-	var explored = [];
-	var frontier = new Array();
-	
-	frontier.unshift({'distance': 0, 'nodeID': start, 'path': []});	
-	
-	var current, path;
-	
-	var counter = 0;
-	
-	// Loop until we have explored all frontiers. If this completes we couldn't find a path
-	while(frontier.length > 0) {
-		searchCounter++;
-		current = frontier.pop();
-		
-		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
-			path = current.path.slice(0);
-			path.push(current.nodeID);
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
-		}
-		
-		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
-		for(let node of theBoard.getNeighbors(current.nodeID, board)) {		
-			
-			// Optimization
-			if(node.col == goal.col && node.row == goal.row) {
-				path = current.path.slice(0);
-				path.push(current.nodeID);
-				path.push(node);
-				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-				return {'path': path, 'distance': current.distance + + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
-			}
-			
-			if(!(this.isIn(node, explored))) {
-				explored.push(node);
-				path = current.path.slice(0); 
-				path.push(current.nodeID);
-				frontier.unshift({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
-			}			
-		}
-				
-		iterationMaintenance(messageID, searchDelay, counter, explored, frontier);
-
+	if(start == goal) {
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
 	}
 	
-	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
+	this.frontier.unshift({'distance': 0, 'nodeID': start, 'path': []});
+	
+	return this.continueSearch();
+}
+
+BreadthFirstSearch.prototype.continueSearch = function() {	
+	// Check to see if we couldn't find a path
+	if(this.frontier.length == 0) {
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+	}
+	
+	this.searchCounter++;
+	var current = this.frontier.pop();
+	
+	var path;
+		
+	// Did we find the goal?
+	if(current.nodeID.col == this.goal.col && current.nodeID.row == this.goal.row) {
+		path = current.path.slice(0);
+		path.push(current.nodeID);
+		//self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': path, 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+	}
+		
+	// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
+	for(let node of theBoard.getNeighbors(current.nodeID, this.board)) {		
+		
+		// Optimization
+		if(node.col == this.goal.col && node.row == this.goal.row) {
+			path = current.path.slice(0);
+			path.push(current.nodeID);
+			path.push(node);
+			//self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
+			this.searchComplete = true;
+			return {'completed': this.searchComplete, 'path': path, 'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+		}
+		
+		if(!(this.isIn(node, this.explored))) {
+			this.explored.push(node);
+			path = current.path.slice(0); 
+			path.push(current.nodeID);
+			this.frontier.unshift({'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
+		}			
+	}	
+	
+	return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
 }
 
 /*******************************************/
@@ -161,50 +129,70 @@ function DepthFirstSearch() {
 DepthFirstSearch.prototype = Object.create(Search.prototype);
 DepthFirstSearch.prototype.contructor = BreadthFirstSearch;
 
-DepthFirstSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
-	var searchCounter = 0;
+DepthFirstSearch.prototype.performSearch = function(board, start, goal) {
+	this.searchCounter = 0;
+	
+	this.board = board;
+	this.start = start;
+	this.goal = goal;
+	
+	this.explored = [];
+	this.frontier = new Array();
 	
 	// If the start and end are the same then return an empty list
-	if(start == goal)
-		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
-	
-	var explored = [];
-	var frontier = new Array();
-	
-	frontier.push({'distance': 0, 'nodeID': start, 'path': []});	
-	
-	var current, path;
-	
-	var counter = 0;
-	
-	// Loop until we have explored all frontiers. If this completes we couldn't find a path
-	while(frontier.length > 0) {
-		searchCounter++;		
-		current = frontier.pop();
-
-		// Are we at the goal?
-		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
-			path = current.path;
-			path.push(goal)
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
-		}
-		
-		if(!(this.isIn(current.nodeID, explored))) {
-			explored.push(current.nodeID);
-			
-			// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
-			for(let node of theBoard.getNeighbors(current.nodeID, board)) {							
-					path = current.path.slice(0); 
-					path.push(current.nodeID);
-					frontier.push({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path, 'searchCounter': searchCounter})
-				}			
-		}
-				
-		iterationMaintenance(messageID, searchDelay, counter, explored, frontier);
+	if(start == goal) {
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
 	}
 	
-	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
+	this.frontier.push({'distance': 0, 'nodeID': start, 'path': []});
+	
+	return this.continueSearch();
+}
+
+DepthFirstSearch.prototype.continueSearch = function() {
+	// Check to see if we couldn't find a path
+	if(this.frontier.length == 0) {
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+	}
+	
+	this.searchCounter++;
+	var current = this.frontier.pop();
+	
+	var path;
+		
+	// Did we find the goal?
+	if(current.nodeID.col == this.goal.col && current.nodeID.row == this.goal.row) {
+		path = current.path.slice(0);
+		path.push(current.nodeID);
+		//self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
+		this.searchComplete = true;
+		return {'completed': this.searchComplete, 'path': path, 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+	}
+		
+	// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
+	for(let node of theBoard.getNeighbors(current.nodeID, this.board)) {		
+		
+		// Optimization
+		if(node.col == this.goal.col && node.row == this.goal.row) {
+			path = current.path.slice(0);
+			path.push(current.nodeID);
+			path.push(node);
+			//self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
+			this.searchComplete = true;
+			return {'completed': this.searchComplete, 'path': path, 'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
+		}
+		
+		if(!(this.isIn(node, this.explored))) {
+			this.explored.push(node);
+			path = current.path.slice(0); 
+			path.push(current.nodeID);
+			this.frontier.push({'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
+		}			
+	}	
+	
+	return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier};
 }
 
 /*******************************************/
@@ -216,62 +204,79 @@ function UniformCostSearch() {
 UniformCostSearch.prototype = Object.create(Search.prototype);
 UniformCostSearch.prototype.contructor = UniformCostSearch;
 
-UniformCostSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
-	var searchCounter = 0;
+UniformCostSearch.prototype.performSearch = function(board, start, goal) {
+	this.searchCounter = 0;
+
+	this.board = board;
+	this.start = start;
+	this.goal = goal;
+	
+	this.explored = [];
+	this.frontier = new FastPriorityQueue(function(a,b) {return a.distance < b.distance});
 	
 	// If the start and end are the same then return an empty list
-	if(start == goal)
-		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
-	
-	var explored = [];
-	var frontier = new FastPriorityQueue(function(a,b) {return a.distance < b.distance});
-	
-	frontier.add({'distance': 0, 'nodeID': start, 'path': []});	
-	
-	var current, path;
-	
-	var counter = 0;
-	
-	// Loop until we have explored all frontiers. If this completes we couldn't find a path
-	while(frontier.size > 0) {
-		searchCounter++;
-		current = frontier.poll();
-		
-		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
-			path = current.path.slice(0);
-			path.push(current.nodeID);
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
-		}
-				
-		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
-		for(let node of theBoard.getNeighbors(current.nodeID, board)) {		
-			
-			// Optimization
-			if(node.col == goal.col && node.row == goal.row) {
-				path = current.path.slice(0);
-				path.push(current.nodeID);
-				path.push(node);
-				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
-			}
-			
-			if(!(this.isIn(node, explored))) {
-				explored.push(node);
-				path = current.path.slice(0); 
-				path.push(current.nodeID);
-				frontier.add({'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
-			}			
-		}
-
+	if(start == goal) {
+		this.searchComplete = true;
 		// Accessing the array internal to the priority queue so need to have it cleaned up first
 		frontier.trim();
-
-		iterationMaintenance(messageID, searchDelay, counter, explored, frontier.array);
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
 	}
 	
-	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
+	this.frontier.add({'distance': 0, 'nodeID': start, 'path': []});	
+	
+	return this.continueSearch();
 }
+
+UniformCostSearch.prototype.continueSearch = function() {
+	var current, path;
+	
+	// Check to see if we couldn't find a path
+	if(this.frontier.size == 0) {
+		this.searchComplete = true;
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
+		this.frontier.trim();
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+	}
+	
+	this.searchCounter++;
+	current = this.frontier.poll();
+	
+	if(current.nodeID.col == this.goal.col && current.nodeID.row == this.goal.row) {
+		path = current.path.slice(0);
+		path.push(current.nodeID);
+		this.searchComplete = true;
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
+		this.frontier.trim();
+		return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+	}
+			
+	// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
+	for(let node of theBoard.getNeighbors(current.nodeID, this.board)) {		
+		
+		// Optimization
+		if(node.col == this.goal.col && node.row == this.goal.row) {
+			path = current.path.slice(0);
+			path.push(current.nodeID);
+			path.push(node);
+			this.searchComplete = true;
+			// Accessing the array internal to the priority queue so need to have it cleaned up first
+			this.frontier.trim();
+			return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+		}
+		
+		if(!(this.isIn(node, this.explored))) {
+			this.explored.push(node);
+			path = current.path.slice(0); 
+			path.push(current.nodeID);
+			this.frontier.add({'distance': current.distance + this.board.boardGrid[node.col][node.row].weight, 'nodeID': node, 'path': path})
+		}			
+	}
+
+	// Accessing the array internal to the priority queue so need to have it cleaned up first
+	this.frontier.trim();
+	return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+}
+
 
 /*******************************************/
 
@@ -287,82 +292,75 @@ AStarSearch.prototype.euclideanDistance = function(a, b) {
 	return Math.sqrt(Math.pow(a.col - b.col, 2) + Math.pow(a.row - b.row, 2));
 }
 
-AStarSearch.prototype.performSearch = function(messageID, searchDelay, board, start, goal) {
-	var searchCounter = 0;
+AStarSearch.prototype.performSearch = function(board, start, goal) {
+	this.searchCounter = 0;
+
+	this.board = board;
+	this.start = start;
+	this.goal = goal;
+
+	this.explored = [];
+	this.frontier = new FastPriorityQueue(function(a,b) { return a.astar < b.astar });
 	
 	// If the start and end are the same then return an empty list
-	if(start == goal)
-		return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
-	
-	var explored = [];
-	var frontier = new FastPriorityQueue(function(a,b) {
-		return a.astar < b.astar});
-	
-	frontier.add({'astar': 0, 'distance': 0, 'nodeID': start, 'path': []});	
-	
-	var current, path;
-	
-	var counter = 0;
-	
-	// Loop until we have explored all frontiers. If this completes we couldn't find a path
-	while(frontier.size > 0) {
-		searchCounter++;
-		current = frontier.poll();
-
-		if(current.nodeID.col == goal.col && current.nodeID.row == goal.row) {
-			path = current.path.slice(0);
-			path.push(current.nodeID);
-			self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-			return {'path': path, 'distance': current.distance, 'searchCounter': searchCounter};
-		}
-		
-		// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
-		for(let node of theBoard.getNeighbors(current.nodeID, board)) {				
-			// Optimization
-			if(node.col == goal.col && node.row == goal.row) {
-				path = current.path.slice(0);
-				path.push(current.nodeID);
-				path.push(node);
-				self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier.array});
-				return {'path': path, 'distance': current.distance + board.boardGrid[node.col][node.row].weight, 'searchCounter': searchCounter};
-			}
-			
-			if(!(this.isIn(node, explored))) {
-				explored.push(node);
-				path = current.path.slice(0); 
-				path.push(current.nodeID);				
-				var updatedDistance = current.distance + board.boardGrid[node.col][node.row].weight;
-				frontier.add({'astar': updatedDistance + this.euclideanDistance(node, goal), 'distance': updatedDistance , 'nodeID': node, 'path': path})
-			}			
-		}
-		
+	if(start == goal) {
+		this.searchComplete = true;
 		// Accessing the array internal to the priority queue so need to have it cleaned up first
 		frontier.trim();
-
-		iterationMaintenance(messageID, searchDelay, counter, explored, frontier.array);				
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
 	}
 	
-	return {'path': [], 'distance': 0, 'searchCounter': searchCounter};
-}
-
-// Sends an update to the main thread and adds a delay if the user asked for it
-function iterationMaintenance(messageID, searchDelay, counter, explored, frontier) {	
-	// If there is a search delay always send an update to the main thread. If there is no search delay then skip messages to not overwhelm the main thread 
-	if(counter == 5 || searchDelay > 0) {
-		self.postMessage({'cmd' : 'currentStatus', 'ID': messageID, 'explored': explored, 'frontier': frontier});
-		counter = 0;
-	}
-	else
-		counter++;
+	this.frontier.add({'astar': 0, 'distance': 0, 'nodeID': start, 'path': []});
 	
-	// Want to show the progress
-	sleep(searchDelay);
+	return this.continueSearch();
 }
 
-// Should not normally do this, but blocking in a worker thread. Silly that Javascript does not yet have a commonly available way to sleep without blocking.
-// Since this is a worker thread, the UI isn't blocked, but it does take all the capacity of a single core
-function sleep(time) {
-	var now = new Date().getTime();
-	while(new Date().getTime() < now + time) 
-	 ; // Do nothing
+AStarSearch.prototype.continueSearch = function() {
+	var current, path;
+	
+	// Check to see if we couldn't find a path
+	if(this.frontier.size == 0) {
+		this.searchComplete = true;
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
+		this.frontier.trim();
+		return {'completed': this.searchComplete, 'path': [], 'distance': 0, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+	}
+
+	this.searchCounter++;
+	current = this.frontier.poll();
+
+	if(current.nodeID.col == this.goal.col && current.nodeID.row == this.goal.row) {
+		path = current.path.slice(0);
+		path.push(current.nodeID);
+		this.searchComplete = true;
+		// Accessing the array internal to the priority queue so need to have it cleaned up first
+		this.frontier.trim();
+		return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+	}
+	
+	// Lets get all the neighboring nodes and add them to the frontier if they haven't been explored
+	for(let node of theBoard.getNeighbors(current.nodeID, this.board)) {				
+		// Optimization
+		if(node.col == this.goal.col && node.row == this.goal.row) {
+			path = current.path.slice(0);
+			path.push(current.nodeID);
+			path.push(node);
+			this.searchComplete = true;
+			// Accessing the array internal to the priority queue so need to have it cleaned up first
+			this.frontier.trim();
+			return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
+		}
+		
+		if(!(this.isIn(node, this.explored))) {
+			this.explored.push(node);
+			path = current.path.slice(0); 
+			path.push(current.nodeID);				
+			var updatedDistance = current.distance + this.board.boardGrid[node.col][node.row].weight;
+			this.frontier.add({'astar': updatedDistance + this.euclideanDistance(node, this.goal), 'distance': updatedDistance , 'nodeID': node, 'path': path})
+		}			
+	}
+	
+	// Accessing the array internal to the priority queue so need to have it cleaned up first
+	this.frontier.trim();
+	return {'completed': this.searchComplete, 'path': path, 'distance': current.distance, 'searchCounter': this.searchCounter, 'explored': this.explored, 'frontier': this.frontier.array};
 }

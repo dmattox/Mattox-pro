@@ -41,11 +41,11 @@
 	        <div class="panelHeader">N Queens</div>
 	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
 	            <div class="flip">Player</div>
-	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 	            		<label class="button_label" for="humanPlayer">Human</label>
 		                <label style="margin:auto;" class="switch"> 
-	  						<input style="margin:auto;" type="checkbox" onclick="onclickHumanPlayer(this)" id="humanPlayer">
-	  						<div style="margin:auto;" class="slider"></div>
+	  						<input type="checkbox" onclick="onclickHumanPlayer(this)" id="humanPlayer">
+	  						<div  class="slider"></div>
 						</label>
 						
 						<label class="button_label" for="geneticPlayer">Genetic</label>
@@ -58,9 +58,9 @@
 	        <form>
 	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
 	            <div class="flip">Board</div>
-	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+	            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 		            	<div class="button_label" id="sizeLabel">Size</div>
-		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 		            		<input class="input" type="range" id="size" min="4" max="20" value="8" step="2"  
 		            		onchange="onclickSize();" onmouseup="onclickSize();" onkeypress="onclickSize()" onpaste="onclickSize();" oninput="onclickSize()">
 		            	</div>
@@ -71,6 +71,9 @@
 	</div>
 	
 <div id = "isolationDiv" class="game"><canvas style="padding: 5;" tabindex='1' id="searchCanvas" width ="700px" height="700px"></canvas></div>
+<div id = "instructions" class="instructions">Instructions:<BR>&bull; Click and drag queens around the board to solve.
+<BR>&bull; Or click the Genetic Button to have the computer use a genetic algorithm to solve the board. 
+<BR><BR>Note: large board sizes can take up to 8,000 generations to solve.</div>
 
 </body>
 </html>

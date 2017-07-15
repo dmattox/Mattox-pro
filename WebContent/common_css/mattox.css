@@ -15,24 +15,50 @@
 	background-size: cover;
 } 
 
+
 .banner_title {
 	text-align: center;
 	vertical-align: middle;
 	line-height: 2em;
-	font-size: 3vw;
+	font-size: 8vw;
 	font-family: "Times New Roman", Times, serif;
 	font-weight: bold;
 	font-style: italic;
+}
+
+
+@media all and (max-width: 699px) {
+	.banner_title {
+		font-size: 8vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.banner_title {
+		font-size: 3vw;
+	}
 }
 
 .banner_subtitle {
 	text-align: center;
 	vertical-align: middle;
 	line-height: 10px;
-	font-size: 2vw;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 		"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 }
+
+@media all and (max-width: 699px) {
+	.banner_subtitle{
+		font-size: 5vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.banner_subtitle {
+		font-size: 2vw;
+	}
+}
+
 
 .header_seperator {
 	background-color: #275D6E;
@@ -91,6 +117,36 @@
 	2;
 }
 
+.instructions {
+	position: absolute;
+	font-size: 1.0vw;
+	margin: 5px;
+	left: 68vw;
+	top: 23.5vh;
+	height: 15vh;
+	width: 30vw;
+	background: #D7CEC7;
+	padding: 5px;
+	color: : #D7CEC7;
+	z-index
+	=
+	2;
+}
+
+@media all and (max-width: 699px) {
+	.instructions{
+		font-size: 3vw;
+		height: 50vh;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.instructions {
+		font-size: 1vw;
+		height: 15vh;
+	}
+}
+
 #cy_legend {
 	position: absolute;
 	bottom: 0cm;
@@ -103,38 +159,74 @@
 }
 
 .panelHeader {
-	padding: 2px;
 	text-align: center;
 	background-color: #565656;
 	color: white;
 	border: solid 1px #D7CEC7;
-	font-size: 1.7vw;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 }
 
+@media all and (max-width: 699px) {
+	.panelHeader {
+		font-size: 2.5vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.panelHeader {
+		font-size: 1.7vw;
+		padding: 2px;
+	}
+}
+
+
 .panel, .flip {
-	padding: 5px;
+	margin-top: 3px;
 	text-align: center;
 	background-color: #565656;
 	border: solid 1px #565656;
 	color: white;
-	padding: 5px;
-	font-size: 1.5vw;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 }
 
+@media all and (max-width: 699px) {
+	.panel, .flip {
+		font-size: 2.0vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.panel, .flip {
+		font-size: 1.5vw;
+		padding: 5px;
+	}
+}
+
+
 .panel {
-	padding: 4px;
 	display: none;
 	justify-content: center;
 }
 
+
 .panel_border {
 	border: thin solid white; 
-	padding:10px; 
-	margin-top: 5px;
+}
+
+@media all and (max-width: 699px) {
+	.panel_border {
+		padding:0px; 
+		margin-top: 0px;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.panel_border {
+		padding:3px; 
+		margin-top: 3px;
+	}
 }
 
 .label_text {
@@ -144,10 +236,21 @@
 	vertical-align: middle;
 	display: inline-block;
 	line-height: 10px;
-	font-size: 1.5vw;
 	padding: 0px;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+}
+
+@media all and (max-width: 699px) {
+	.label_text {
+		font-size: 3vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.label_text {
+		font-size: 1.5vw;
+	}
 }
 
 .button_label {
@@ -158,28 +261,62 @@
 	margin-top: 0px;
 	text-color: black;
 	color: black;
-	font-size: 1.5vw;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 }
 
+@media all and (max-width: 699px) {
+	.button_label {
+		font-size: 2.2vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.button_label {
+		font-size: 1.5vw;
+	}
+}
+
 .button {
-	font-size: 1.2vw;
-	height:3.5vh;
 	flex-grow: 1;
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light",
 	"Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;	
 }
 
+@media all and (max-width: 699px) {
+	.button {
+		font-size: 2.2vw;
+		height:5vh;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.button {
+		font-size: 1.2vw;
+		height:3.5vh;
+	}
+}
+
 .switch {
 	position: relative;
 	display: inline-block;
-	width: 5.3vw;
 	height: 3vh;
 	text-color: black;
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 	border-radius: 1.3px;
 	border: 0.2px solid #010101;
+}
+
+@media all and (max-width: 699px) {
+	.switch {
+		width: 8vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.switch {
+		width: 5.3vw;
+	}
 }
 
 .switch input {
@@ -194,7 +331,6 @@
 	right: 0;
 	bottom: 0;
 	background-color: #565656;
-	-webkit-transition: .4s;
 	transition: .4s;
 }
 
@@ -202,16 +338,27 @@
 	position: absolute;
 	content: "";
 	height: 2.6vh;
-	width: 1.4vw;
 	left: 0.1vw;
 	bottom: 0.1vh;
 	background-color: white;
-	-webkit-transition: .4s;
 	transition: .4s;
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 	border-radius: 1.3px;
 	border: 0.2px solid #010101;
 }
+
+@media all and (max-width: 699px) {
+	.slider:before {
+		width: 3vw;
+	}
+}
+
+@media all and (min-width: 700px) {
+	.slider:before {
+		width: 1.5vw;
+	}
+}
+
 
 input:checked+.slider {
 	background-color: #3071a9;
@@ -221,24 +368,25 @@ input:focus+.slider {
 	box-shadow: 0 0 1px #3071a9;
 }
 
-input:checked+.slider:before {
-	-webkit-transform: translateX(3.6vw);
-	-ms-transform: translateX(3.6vw);
-	transform: translateX(3.6vw);
+
+@media all and (max-width: 699px) {
+	input:checked+.slider:before {
+		transform: translateX(5vw);
+	}
+}
+
+@media all and (min-width: 700px) {
+	input:checked+.slider:before {
+		transform: translateX(3.6vw);
+	}
 }
 
 input[type=range] {
 	-webkit-appearance: none;
-	width: 100%;
-	margin: 7.6px 0;
-}
-
-input[type=range]:focus {
-	outline: none;
+	width:100%;
 }
 
 input[type=range]::-webkit-slider-runnable-track {
-	width: 100%;
 	height: 1.5vh;
 	cursor: pointer;
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
@@ -259,69 +407,16 @@ input[type=range]::-webkit-slider-thumb {
 	margin-top: -1vh;
 }
 
-input[type=range]:focus::-webkit-slider-runnable-track {
-	background: #3071a9;
+@media all and (max-width: 699px) {
+	input[type=range]::-webkit-slider-thumb {
+		width: 3vw;
+	}
 }
 
-input[type=range]::-moz-range-track {
-	width: 100%;
-	height: 2.5vh;
-	cursor: pointer;
-	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-	background: #3071a9;
-	border-radius: 1.3px;
-	border: 0.2px solid #010101;
+@media all and (min-width: 700px) {
+	input[type=range]::-webkit-slider-thumb {
+		width: 1.5vw;
+	}
 }
 
-input[type=range]::-moz-range-thumb {
-	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-	border: 1px solid #000000;
-	height: 3vh;
-	width: 1.5vw;
-	border-radius: 3px;
-	background: #ffffff;
-	cursor: pointer;
-}
-
-input[type=range]::-ms-track {
-	width: 100%;
-	height: 2.5vh;
-	cursor: pointer;
-	background: transparent;
-	border-color: transparent;
-	color: transparent;
-}
-
-input[type=range]::-ms-fill-lower {
-	background: #3071a9;
-	border: 0.2px solid #010101;
-	border-radius: 2.6px;
-	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-}
-
-input[type=range]::-ms-fill-upper {
-	background: #3071a9;
-	border: 0.2px solid #010101;
-	border-radius: 2.6px;
-	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-}
-
-input[type=range]::-ms-thumb {
-	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-	border: 1px solid #000000;
-	height: 3vh;
-	width: 1.5vw;
-	border-radius: 3px;
-	background: #ffffff;
-	cursor: pointer;
-	height: 2.5vh;
-}
-
-input[type=range]:focus::-ms-fill-lower {
-	background: #3071a9;
-}
-
-input[type=range]:focus::-ms-fill-upper {
-	background: #3071a9;
-}
 

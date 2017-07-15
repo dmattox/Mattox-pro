@@ -39,7 +39,7 @@
     <div id="config" class="config">   
 	    <div class="preamble">
 	        <div class="panelHeader">Search</div>
-	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	        <div style="border: thin solid white; padding:.5vw; margin-top: 5px;">
 	            <div class="flip">Algorithm</div>
 	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
 	            		<label class="button_label" for="breadthFirstSearch">Breadth First</label>
@@ -82,21 +82,21 @@
 	            	</div>
 	        </div>
 	        <form>
-	        <div style="border: thin solid white; padding:10px; margin-top: 5px;">
+	        <div style="border: thin solid white; padding:0.5vw; margin-top: 5px;">
 	            <div class="flip">Board</div>
 	            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
 		            	<div class="button_label">Columns</div>
-		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 		            		<input class="input" type="range" id="columns" min="10" max="60" value="40" step="2"  
 		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
 		            	</div>
 		            	<div class="button_label">Rows</div>
-		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 		            		<input type="range" id="rows" min="10" max="30" value="20" step="2" 
 		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
 		            	</div>
 		                <div class="button_label">Block Density</div>
-		            	<div style="display: flex; justify-content: center; padding:5px; flex-direction:column;">
+		            	<div style="display: flex; justify-content: center; padding-top:5px; flex-direction:column;">
 		            		<input type="range" id="blockDensity" min="0" max="90" value="20" step="2" 
 		            		onchange="game.updateBoardSize(); game.performSearch()" onmouseup="game.updateBoardSize(); game.performSearch()" onkeypress="game.updateBoardSize()" onpaste="game.updateBoardSize();" oninput="game.updateBoardSize()">
 		            	</div>
